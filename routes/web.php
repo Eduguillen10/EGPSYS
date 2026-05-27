@@ -121,7 +121,9 @@ Route::controller(SeleccionarController::class)->group(function () {
 
 });
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/inicio', [App\Http\Controllers\HomeController::class, 'index'])->name('inicio');
+Route::get('/inicio/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('inicio.dashboard');
+Route::get('/home', fn () => redirect()->route('inicio'))->name('home');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::resource('referenciales/stock', StockController::class);
 Route::resource('compras/pedido', PedidosComprasController::class);

@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 class VerificarPermisoRuta
 {
     private array $rutasLibres = [
+        'inicio',
+        'inicio.dashboard',
         'home',
         'logout',
         'password.confirm',

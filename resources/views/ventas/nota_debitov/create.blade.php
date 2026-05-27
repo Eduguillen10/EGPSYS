@@ -64,7 +64,7 @@
         </div>
 
         <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
-            <div class="form-group">
+            <div class="forcm-group">
                 <label>Depósito</label>
                 <select name="iddeposito" class="form-control selectpicker" id="iddeposito" data-live-search="true" autofocus>
                     @foreach($depositos as $dep)

@@ -104,6 +104,14 @@
                     // Array principal del menu: objetos con subobjetos en children.
                     $menuItems = [
                         (object) [
+                            'id' => 'menu-inicio',
+                            'label' => 'Inicio',
+                            'icon' => 'fa fa-home',
+                            'href' => url('/inicio'),
+                            'permission' => null,
+                            'keywords' => 'Inicio Dashboard Panel principal /inicio',
+                        ],
+                        (object) [
                             'id' => 'menu-productos',
                             'label' => 'Productos',
                             'icon' => 'fa fa-laptop',
@@ -214,7 +222,12 @@
 
                         return $item;
                     })->filter(function ($item) {
-                        return count($item->children ?? []) > 0;
+                        $hasChildren = count($item->children ?? []) > 0;
+                        $permission = $item->permission ?? null;
+                        $canSeeDirectItem = is_null($permission)
+                            || (Auth::check() && Auth::user()->tienePermiso($permission, 'ver'));
+
+                        return $hasChildren || $canSeeDirectItem;
                     })->values()->all();
 
                     $menuItemsForSearch = collect($menuItems)->map(function ($item) {
@@ -245,19 +258,28 @@
                 </li>
 
                 @foreach ($menuItems as $menuItem)
-                    <li class="sub-menu js-menu-module" data-menu-id="{{ $menuItem->id }}">
-                        <a href="{{ $menuItem->href }}">
-                            <i class="{{ $menuItem->icon }}"></i>
-                            <span>{{ $menuItem->label }}</span>
-                        </a>
-                        <ul class="sub">
-                            @foreach ($menuItem->children as $child)
-                                <li class="js-menu-item" data-menu-id="{{ $child->id }}">
-                                    <a href="{{ $child->href }}">{{ $child->label }}</a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </li>
+                    @if(count($menuItem->children ?? []) > 0)
+                        <li class="sub-menu js-menu-module" data-menu-id="{{ $menuItem->id }}">
+                            <a href="{{ $menuItem->href }}">
+                                <i class="{{ $menuItem->icon }}"></i>
+                                <span>{{ $menuItem->label }}</span>
+                            </a>
+                            <ul class="sub">
+                                @foreach ($menuItem->children as $child)
+                                    <li class="js-menu-item" data-menu-id="{{ $child->id }}">
+                                        <a href="{{ $child->href }}">{{ $child->label }}</a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </li>
+                    @else
+                        <li class="js-menu-module" data-menu-id="{{ $menuItem->id }}">
+                            <a href="{{ $menuItem->href }}">
+                                <i class="{{ $menuItem->icon }}"></i>
+                                <span>{{ $menuItem->label }}</span>
+                            </a>
+                        </li>
+                    @endif
                 @endforeach
             </ul>
         </div>
