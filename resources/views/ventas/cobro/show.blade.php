@@ -155,6 +155,11 @@
 
 </div>
 
+@include('ventas.partials.hash_integridad', [
+    'hash' => $cobros->hash_documento ?? null,
+    'hashValido' => $hashValido ?? null,
+])
+
 <a class="btn btn-default" href="{{ route('cobro.index') }}">Volver</a>
 
 @endsection

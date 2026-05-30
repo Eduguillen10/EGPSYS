@@ -1,250 +1,98 @@
 @extends('layouts.admin')
 @section('contenido')
 
-<h1>Crear presupuesto</h1>
+<style>
+    .presupuesto-header {
+        margin-bottom: 18px;
+    }
 
-@if (count($errors) > 0)
-    <div class="alert alert-danger">
-        <ul>
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
+    .presupuesto-panel {
+        border: 1px solid #d9e2ec;
+        border-radius: 4px;
+        background: #fff;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .06);
+    }
+
+    .presupuesto-action {
+        border: 1px dashed #9ecae1;
+        border-radius: 4px;
+        background: #f8fcff;
+        padding: 18px;
+    }
+
+    .presupuesto-action h4 {
+        margin-top: 0;
+        color: #2c3e50;
+        font-weight: 700;
+    }
+</style>
+
+<div class="row presupuesto-header">
+    <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12">
+        <h3>Nuevo Presupuesto de Compra</h3>
+
+        @if (count($errors) > 0)
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
     </div>
-@endif
+</div>
 
 @include('compras.presupuesto.modalelegir')
 
-<form action="{{ url('compras/presupuesto') }}" method="POST" autocomplete="off" enctype="multipart/form-data">
-    {{ csrf_field() }}
-
+<div class="presupuesto-panel">
     <div class="row">
-        <div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
+        <div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
             <div class="form-group">
-                <label for="idsucursal">Sucursal</label>
-                <input type="text" name="idsucursal" class="form-control" value="{{ $sucursales->descripcion }}" readonly>
-                <input type="hidden" name="idsucursal" value="{{ $sucursales->idsucursal }}">
+                <label>Sucursal</label>
+                <input type="text" class="form-control" value="{{ $sucursales->descripcion ?? 'Sin sucursal seleccionada' }}" readonly>
             </div>
         </div>
 
-        <div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
+        <div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
             <div class="form-group">
-                <label for="usu_inser">Usuario</label>
-                <input type="text" name="usuario" value="{{ Auth::user()->name }}" class="form-control" placeholder="Usuario..." readonly>
+                <label>Usuario</label>
+                <input type="text" value="{{ Auth::user()->name }}" class="form-control" readonly>
             </div>
         </div>
 
-        <div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
+        <div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
             <div class="form-group">
-                <label for="proveedor">Proveedor</label>
-                <select name="idproveedor" id="idproveedor" class="form-control selectpicker" data-live-search="true" onchange="dataproveedor();" onkeyup="dataproveedor();" onclick="dataproveedor();" onfocus="dataproveedor();">
-                    @foreach ($proveedores as $prov)
-                        <option value="{{ $prov->idproveedor }}">{{ $prov->razonsocial }} ({{ $prov->ruc }})</option>
-                    @endforeach
-                </select>
-                <script>
-                    $(document).ready(function () {
-                        $("#idproveedor").change(function () {
-                            var idproveedor = $(this).val();
-                            if (idproveedor == "") {
-                                alert("Debe seleccionar un proveedor");
-                                $(this).focus();
-                            }
-                        });
-                    });
-                </script>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
-            <a href="" data-target="#modal-elegir" data-toggle="modal">
-            <button class="btn btn-info"><i class="fa fa-download" aria-hidden="true"></i>Seleccionar Pedido</button></a>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-
-                    <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
-                        <div class="form-group">
-                            <label>Fecha</label>
-                            <input type="date" name="fecha" id="fecha" class="form-control" value="{{ date('Y-m-d') }}" readonly>
-                            <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.11/dist/flatpickr.min.js"></script>
-                            <script>
-                                $(document).ready(function () {
-                                    $("#fecha").flatpickr({
-                                        dateFormat: "d-m-y",
-                                        minDate: "today",
-                                        maxDate: new Date().getFullYear() + 1, -1, -1,
-                                    });
-                                });
-                            </script>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
-                        <div class="form-group">
-                            <label>Fecha Validez</label>
-                            <input type="date" name="fechavalidez" id="fechavalidez" class="form-control" value="{{ date('Y-m-d') }}" min="{{ date('Y-m-d', strtotime('+1 day')) }}" required>
-                            <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.11/dist/flatpickr.min.js"></script>
-                            <script>
-                                $(document).ready(function () {
-                                    $("#fechavalidez").flatpickr({
-                                        dateFormat: "d-m-y",
-                                        minDate: "today",
-                                        maxDate: new Date().getFullYear() + 1, -1, -1,
-                                    });
-                                });
-                            </script>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4 col-sm-4 col-md-4 col-xs-12">
-                        <div class="form-group">
-                            <label>Observación</label>
-                            <textarea name="observacion" id="observacion" class="form-control" rows="4" placeholder="Observación..." ></textarea>
-                            <p id="error_observacion" style="display: none; color: red;">La observación debe tener al menos 10 caracteres.</p>
-                            <script>
-                                $(document).ready(function () {
-                                    $("#observacion").keyup(function () {
-                                        var observacion = $(this).val();
-                                        if (observacion.length < 10) {
-                                            $("#error_observacion").show();
-                                        } else {
-                                            $("#error_observacion").hide();
-                                        }
-                                    });
-                                });
-                            </script>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12">
-                        <div class="table-responsive">
-                            <table id="detalles" class="table table-striped table-bordered table-condensed table-hover">
-                                <thead style="background-color:#ffd966">
-                                    <th>Producto</th>
-                                    <th>Cantidad</th>
-                                    <th>Precio Compra</th>
-                                    <th>Subtotal</th>
-                                    <th>Opciones</th>
-                                </thead>
-
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <select name="pidproducto[]" id="pidproducto" class="form-control selectpicker" data-live-search="true">
-                                                @foreach($productos as $prod)
-                                                <option value="{{$prod->idproducto}}">{{$prod->productos}} {{$prod->marcas}} </option>
-                                                @endforeach
-                                            </select>
-                                        </td>
-                                        <td><input type="number" name="pcantidad[]" id="pcantidad" class="form-control" min="1"></td>
-                                        <td><input type="number" name="pprecio_compra[]" id="pprecio_compra" class="form-control" min="0"></td>
-                                        <td><input type="number" name="ptotal[]" id="ptotal" class="form-control" readonly></td>
-                                        <td><button type="button" class="btn btn-danger btn-xs" onclick="eliminar(this)">Eliminar</button></td>
-                                    </tr>
-                                </tbody>
-
-                                <tfoot>
-                                    <tr>
-                                        <th colspan="3" style="text-align:right">TOTAL</th>
-                                        <th><input type="number" name="total" id="total" class="form-control" readonly></th>
-                                        <th></th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12">
-                        <div class="form-group">
-                            <button type="button" id="btnagregar" class="btn btn-primary btn-sm">Agregar</button>
-                            <button type="submit" class="btn btn-success btn-sm">Guardar</button>
-                            <a href="{{url('compras/presupuesto')}}" class="btn btn-default btn-sm">Cancelar</a>
-                        </div>
-                    </div>
-
-                </div>
+                <label>Fecha</label>
+                <input type="date" class="form-control" value="{{ $fecha }}" readonly>
             </div>
         </div>
     </div>
+</div>
 
-</form>
+<div class="presupuesto-panel">
+    <div class="presupuesto-action">
+        <div class="row">
+            <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
+                <h4>Seleccione el pedido de compra a presupuestar</h4>
+                <p>Desde esta opcion se elige el pedido pendiente, el proveedor y la fecha de validez. Luego el sistema carga el detalle para completar los precios ofertados.</p>
+            </div>
+            <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 text-right">
+                <a href="" data-target="#modal-elegir" data-toggle="modal" class="btn btn-info">
+                    <i class="fa fa-download" aria-hidden="true"></i> Seleccionar Pedido
+                </a>
+                <a href="{{ url('compras/presupuesto') }}" class="btn btn-default">
+                    <i class="fa fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-@push ('scripts')
-<script>
-    function dataproveedor() {
-        var idproveedor = $("#idproveedor").val();
-        var ruc = $("#idproveedor option:selected").data("ruc");
-        $("#ruc").val(ruc);
-    }
-
-    $(document).ready(function () {
-        $('#btnagregar').click(function () {
-            agregar();
-        });
-    });
-
-    var cont = 0;
-    total = 0;
-    subtotal = [];
-    $("#guardar").hide();
-
-    function agregar() {
-    idproducto = $("#pidproducto").val();
-    producto = $("#pidproducto option:selected").text();
-    cantidad = $("#pcantidad").val();
-    precio_compra = $("#pprecio_compra").val();
-
-    if (idproducto != "" && cantidad != "" && cantidad > 0 && precio_compra != "") {
-        subtotal[cont] = cantidad * precio_compra;
-        total = total + subtotal[cont];
-
-        var fila = '<tr class="selected" id="fila' + cont + '">' ;
-        fila = fila + '<td><input type="hidden" name="idproducto[]" value="' + idproducto + '">' + producto + '</td>' ;
-        fila = fila + '<td><input type="number" name="cantidad[]" value="' + cantidad + '"></td>' ;
-        fila = fila + '<td><input type="number" name="precio_compra[]" value="' + precio_compra + '"></td>' ;
-        fila = fila + '<td>' + subtotal[cont] + '</td>' ;
-        fila = fila + '<td><button type="button" class="btn btn-danger btn-xs" onclick="eliminar(' + cont + ')">Eliminar</button></td>';
-        fila = fila + '</tr>';
-        cont++;
-        limpiar();
-        $("#total").html("Gs/ " + total);
-        console.log('el total', total);
-        evaluar();
-        $("#detalles").append(fila);
-        
-        // Asignar el valor actualizado al campo de total
-        $("#total").val(total);
-    } else {
-        alert("Error al ingresar el detalle del ingreso, revise los datos del articulo");
-    }
-}
-
-    function limpiar() {
-        $("#pcantidad").val("");
-        $("#pprecio_compra").val("");
-    }
-
-    function evaluar() {
-        if (total > 0) {
-            $("#guardar").show();
-        } else {
-            $("#guardar").hide();
-        }
-    }
-
-    function eliminar(index) {
-        total = total - subtotal[index];
-        $("#total").html("Gs/. " + total);
-        $("#fila" + index).remove();
-        evaluar();
-    }
-</script>
-@endpush
 @endsection
-

@@ -48,7 +48,7 @@
 							<td>{{ $ntv->sucursal}}</td>
 							<td>{{ $ntv->cliente}}</td>
 							<td>{{ $ntv->num_documento}}</td>
-							<td>{{ $ntv->nro_factura}}</td>
+							<td>{{ $ntv->nro_nota_debito ?? '-' }}</td>
 							<td>{{ $ntv->timbrado}}</td>
 							<td>{{ $ntv->concepto}}</td>
 							<td>{{ $ntv->idventa}}</td>
@@ -57,6 +57,9 @@
 							<td>
 								<a href="{{ url('ventas/nota_debitov/' . $ntv->idnota_debitov) }}">
 									<button class="btn btn-primary">Detalles</button>
+								</a>
+								<a href="{{ route('nota_debitov.comprobante', $ntv->idnota_debitov) }}" target="_blank">
+									<button class="btn btn-warning">Imprimir Nota de Debito</button>
 								</a>
 								<button type="button" class="btn btn-danger" data-toggle="modal"
 									data-target="#modal-delete-{{$ntv->idnota_debitov}}">

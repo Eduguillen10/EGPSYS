@@ -24,13 +24,18 @@ class ComprasFormRequest extends FormRequest
             'estado' => 'nullable|max:50',
             'ruc' => 'required|string|max:20',
             'nro_factura' => 'required|string|max:50',
+            'timbrado' => 'required|string|max:25',
             'condicion' => 'required|string|max:30',
             'totalcompra' => 'nullable|numeric|min:0',
+            'idordencompra' => 'nullable|integer|exists:orden_compras,idordencompra',
+            'idproducto' => 'required|array|min:1',
             'idproducto.*' => 'required|integer|exists:productos,idproducto',
+            'cantidad' => 'required|array|min:1',
             'cantidad.*' => 'required|numeric|min:1',
+            'precio_compra' => 'required|array|min:1',
             'precio_compra.*' => 'required|numeric|min:0',
-            'items.*' => 'required|integer|min:1',
-            'totalitems.*' => 'required|numeric|min:0',
+            'items.*' => 'nullable|integer|min:1',
+            'totalitems.*' => 'nullable|numeric|min:0',
         ];
     }
 

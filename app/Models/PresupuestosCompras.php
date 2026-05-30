@@ -23,9 +23,14 @@ class PresupuestosCompras extends Model
         'observacion',
         'estado',
         'fechavalidez',
+        'montoiva10',
+        'montoiva5',
+        'montogravada10',
+        'montogravada5',
+        'montoexenta',
+        'montopresupuesto_compra',
     ];
 }
-
 
 
 

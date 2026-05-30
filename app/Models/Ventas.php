@@ -36,6 +36,9 @@ class Ventas extends Model
         'condicion',
         'estado',
         'usuario',
+        'hash_documento',
+        'hash_anulacion',
+        'hash_version',
     ];
 
     // Relación con Cliente

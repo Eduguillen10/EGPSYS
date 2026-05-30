@@ -2,10 +2,16 @@
 @section ('contenido')
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-		<h3>Listado de Orden de Compra 
+        <h3>Listado de Orden de Compra 
             <a href="orden/create"><button class="btn btn-success">Nuevo</button></a>
             <span>Total de Registros: {{ $total }}</span>        
         </h3>
+		@if (session('success'))
+			<div class="alert alert-success">{{ session('success') }}</div>
+		@endif
+		@if (session('error'))
+			<div class="alert alert-danger">{{ session('error') }}</div>
+		@endif
 		@include('compras/orden.search')
 	</div>
 </div>
@@ -23,7 +29,7 @@
 					<th>Dirección</th>
 					<th>Presupuesto</th>
 					<th>Observacion</th>
-					<th>Total</th>
+					<th>Monto</th>
 					<th>Estado</th>
 					<th>Opciones</th>
 				</thead>
@@ -39,18 +45,20 @@
 					<td>
 						{{ $ord->idordencompra ? $ord->orden_observacion : $ord->observacion }}
 					</td>					
-					<td>{{ number_format($ord->total_orden_compra, 0, ',', '.')}}</td>
+					<td>{{ number_format($ord->monto_orden_compra, 0, ',', '.')}}</td>
 					<td>{{ $ord->estado}}</td>
 					<td>
-						<a href="{{URL('compras/orden/'.$ord->idordencompra.'show')}}"><button class="btn btn-primary">Detalles</button></a>
-						<a href="" data-target="#modal-delete-{{$ord->idordencompra}}" data-toggle="modal"><button class="btn btn-danger">Eliminar</button></a>
+						<a href="{{ route('orden.show', $ord->idordencompra) }}"><button class="btn btn-primary">Detalles</button></a>
+						@if ($ord->estado !== 'Cancelado')
+							<a href="" data-target="#modal-delete-{{$ord->idordencompra}}" data-toggle="modal"><button class="btn btn-danger">Anular</button></a>
+						@endif
 					</td>
 				</tr>
 				@include('compras.orden.modal')
 				@endforeach
 			</table>
 		</div>
-		{{$orden_compras->appends(Request::only(['searchText']))->render()}}
+		{{$orden_compras->appends(Request::only(['searchText', 'searchText2', 'searchText3', 'searchText4', 'searchText5', 'searchText6', 'searchText7']))->render()}}
 	</div>
 </div>
 

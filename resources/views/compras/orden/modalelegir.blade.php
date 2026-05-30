@@ -15,7 +15,8 @@
                         <div class="col-lg-6 col-sm-6 col-md-6 col-xs-12">
                             <div class="form-group">
                                 <label for="presupuesto">Nro.Presupuesto</label>
-                                <select name="numero_presupuesto" id="numero_presupuesto" class="form-control selectpicker" data-live-search="true">
+                                <select name="numero_presupuesto" id="numero_presupuesto" class="form-control selectpicker" data-live-search="true" required>
+                                    <option value="">Seleccione un presupuesto</option>
                                     @foreach($presupuestos as $pre)
                                         <option value="{{$pre->idpresupuestocompra}}" >{{$pre->idpresupuestocompra}} - {{date('d/m/Y', strtotime($pre->fecha))}} {{$pre->descripcion}}</option>
                                     @endforeach
@@ -25,7 +26,8 @@
                         <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
                             <div class="form-group">
                                 <label>Depósito</label>
-                                <select name="iddeposito" class="form-control selectpicker" id="deposito" data-Live-search="true" autofocus>
+                                <select name="iddeposito" class="form-control selectpicker" id="deposito" data-Live-search="true" required autofocus>
+                                    <option value="">Seleccione deposito</option>
                                     @foreach($depositos as $dep)
                                     <option value="{{$dep->iddeposito}}">{{$dep->descripcion}}</option>
                                     @endforeach

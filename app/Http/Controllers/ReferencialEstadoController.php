@@ -8,6 +8,7 @@ use App\Models\Cargos;
 use App\Models\Chofer;
 use App\Models\Ciudades;
 use App\Models\Clientes;
+use App\Models\DestinatarioRemision;
 use App\Models\Depositos;
 use App\Models\Empleados;
 use App\Models\Empresas;
@@ -26,6 +27,7 @@ use App\Models\TipoArqueo;
 use App\Models\TipoImpuesto;
 use App\Models\TiposClientes;
 use App\Models\TiposDocumentos;
+use App\Models\Transportista;
 use App\Models\Vehiculos;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -125,6 +127,8 @@ class ReferencialEstadoController extends Controller
             'tipo_arqueo' => ['label' => 'Tipo Arqueo', 'model' => TipoArqueo::class, 'search' => ['descripcion'], 'display' => ['descripcion']],
             'vehiculos' => ['label' => 'Vehiculos', 'model' => Vehiculos::class, 'search' => ['nrochapa', 'color', 'chasis', 'modelo'], 'display' => ['nrochapa', 'color', 'chasis', 'modelo']],
             'choferes' => ['label' => 'Choferes', 'model' => Chofer::class, 'search' => ['nombre', 'apellido', 'ci', 'ruc'], 'display' => ['nombre', 'apellido', 'ci', 'ruc']],
+            'transportistas' => ['label' => 'Transportistas', 'model' => Transportista::class, 'search' => ['nombre', 'documento', 'telefono'], 'display' => ['nombre', 'documento', 'telefono']],
+            'destinatarios_remision' => ['label' => 'Destinatarios Remision', 'model' => DestinatarioRemision::class, 'search' => ['nombre', 'documento', 'telefono'], 'display' => ['nombre', 'documento', 'telefono']],
             'formacobro' => ['label' => 'Forma Cobro', 'model' => FormaCobro::class, 'search' => ['descripcion'], 'display' => ['descripcion']],
             'entidademisora' => ['label' => 'Entidad Emisora', 'model' => EntidadEmisora::class, 'search' => ['descripcion'], 'display' => ['descripcion']],
             'tarjetas' => ['label' => 'Tarjetas', 'model' => Tarjeta::class, 'search' => ['descripcion'], 'display' => ['descripcion']],

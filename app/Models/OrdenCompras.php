@@ -25,11 +25,11 @@ class OrdenCompras extends Model
         'ruc',
         'direccion',
         'observacion',
-        'totaliva10',
-        'totaliva5',
-        'totalgravada10',
-        'totalgravada5',
-        'totalexenta',
-        'total_orden_compra',
+        'montoiva10',
+        'montoiva5',
+        'montogravada10',
+        'montogravada5',
+        'montoexenta',
+        'monto_orden_compra',
     ];
 }

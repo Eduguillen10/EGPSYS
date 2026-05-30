@@ -11,7 +11,7 @@
                     <h4 class="modal-title">Cancelar Pedido</h4>
                 </div>
                 <div class="modal-body">
-                    <p>Confirme si desea cancelar el Pedido</p>
+                    <p>Confirme si desea anular el Pedido</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>

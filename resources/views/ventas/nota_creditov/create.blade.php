@@ -147,16 +147,23 @@
         <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
             <div class="form-group">
                 <label>Nro. Nota de Crédito</label>
+                <input type="text" class="form-control" value="{{ $previewNroNota ?? 'Sin timbrado activo' }}" readonly>
+            </div>
+        </div>
+
+        <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
+            <div class="form-group">
+                <label>Factura afectada</label>
                 <input type="text" name="nro_factura" required value="{{ $selectedNroNota }}"
-                       class="form-control" placeholder="Nro. Nota de Credito...">
+                       class="form-control" placeholder="Nro. Factura..." readonly>
             </div>
         </div>
 
         <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
             <div class="form-group">
                 <label>Timbrado</label>
-                <input type="text" name="timbrado" required value="{{ $selectedTimbrado }}"
-                       class="form-control" placeholder="Timbrado...">
+                <input type="text" name="timbrado" required value="{{ $previewTimbrado ?? $selectedTimbrado }}"
+                       class="form-control" placeholder="Timbrado..." readonly>
             </div>
         </div>
 

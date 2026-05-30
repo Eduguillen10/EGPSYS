@@ -20,6 +20,11 @@ class PresupuestosComprasDetalle extends Model
         'cantidad',
         'precio',
         'items',
+        'iva10',
+        'iva5',
+        'gravada10',
+        'gravada5',
+        'exenta',
+        'montoitems',
     ];
 }
-

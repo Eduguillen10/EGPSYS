@@ -28,7 +28,7 @@
    		<div class="col-lg-2 col-md-2 col-sm-2 col-xs-12">
 			<div class="form-group">
 				<div class="input-group">
-					<input type="text" class="form-control" name="searchText5" placeholder="Nro. Factura..." value="{{$searchText5}}">
+					<input type="text" class="form-control" name="searchText5" placeholder="Nro. Nota / Factura..." value="{{$searchText5}}">
 					<span class="input-group-btn">
 						<button type="submit" class="btn btn-primary">Buscar</button>
 					</span>

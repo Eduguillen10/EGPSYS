@@ -22,6 +22,7 @@ class NotaCreditoV extends Model
         'iddeposito',
         'idcliente',
         'num_documento',        
+        'nro_nota_credito',
         'nro_factura',
         'condicion',
         'fecha_registro',
@@ -30,11 +31,15 @@ class NotaCreditoV extends Model
         'concepto',        
         'estado',
         'usuario',
+        'timbrado',
         'totaliva10',
         'totaliva5',
         'totalgravada10',
         'totalgravada5',
         'totalexenta',
-        'totalventa'
+        'totalventa',
+        'hash_documento',
+        'hash_anulacion',
+        'hash_version',
     ];
 }

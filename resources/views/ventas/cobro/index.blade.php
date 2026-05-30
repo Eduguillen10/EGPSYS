@@ -71,10 +71,19 @@
                             Detalles
                         </a>
 
-                        @if($cob->cobro_estado == 'Pendiente')
+                        @if($cob->cobro_estado == 'Pendiente' && (int)($cob->credito_pendiente_aceptacion ?? 0) === 0)
                             <a href="{{ route('cobro.edit', $cob->id_cobro) }}" class="btn btn-success btn-sm">
                                 <i class="fa fa-credit-card"></i>Cobrar
                             </a>
+                        @elseif($cob->cobro_estado == 'Pendiente')
+                            <button type="button" class="btn btn-success btn-sm" disabled title="Debe registrar firma fisica en la venta">
+                                <i class="fa fa-credit-card"></i>Cobrar
+                            </button>
+                            @if($cob->idventa)
+                                <a href="{{ route('venta.show', $cob->idventa) }}" class="btn btn-warning btn-sm">
+                                    Firma pendiente
+                                </a>
+                            @endif
                         @endif
 
                          @if($cob->cobro_estado == 'Realizado')

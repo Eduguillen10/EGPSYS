@@ -4,7 +4,7 @@
 		<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
 			<div class="form-group">
 				<label for="idnota_credito_venta">Nro. Nota Crédito</label>
-				<p>{{$nota_creditov->idnota_creditov}}</p>
+				<p>{{ $nota_creditov->nro_nota_credito ?? ('#' . $nota_creditov->idnota_creditov) }}</p>
 			</div>
 		</div>
 		@if($nota_creditov->idventa)
@@ -145,6 +145,11 @@
 		</div>
 
 	</div>
+
+	@include('ventas.partials.hash_integridad', [
+		'hash' => $nota_creditov->hash_documento ?? null,
+		'hashValido' => $hashValido ?? null,
+	])
 
 	<button class="btn btn-light" onclick="window.location.href='{{ url('ventas/nota_creditov') }}'" type="button">
 		<i class="fa fa-arrow-left"></i> Volver

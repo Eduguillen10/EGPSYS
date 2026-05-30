@@ -41,7 +41,7 @@
 					<td>{{ $comp->estado}}</td>					
 					<td>{{ number_format($comp->totalcompra, 0, ',', '.')}}</td>					
 					<td>
-						<a href="{{URL('compras/compra/'.$comp->idcompra.'show')}}"><button class="btn btn-primary">Detalles</button></a>
+						<a href="{{URL('compras/compra/'.$comp->idcompra)}}"><button class="btn btn-primary">Detalles</button></a>
 						<a href="" data-target="#modal-delete-{{$comp->idcompra}}" data-toggle="modal"><button class="btn btn-danger">Anular</button></a>
 					</td>
 				</tr>

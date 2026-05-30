@@ -731,7 +731,7 @@
                         </div>
 
                         <div class="submeta">
-                            <span class="chip"><span>Nota:</span> <b>#{{ $nota_creditov->idnota_creditov }}</b></span>
+                            <span class="chip"><span>Nro:</span> <b>{{ $nota_creditov->nro_nota_credito ?? ('#' . $nota_creditov->idnota_creditov) }}</b></span>
                             <span class="chip"><span>Nro. doc:</span> <b>{{ $nota_creditov->nro_factura }}</b></span>
                             <span class="chip"><span>Timbrado:</span> <b>{{ $nota_creditov->timbrado }}</b></span>
                             <span class="chip"><span>Estado:</span> <b>{{ $estado }}</b></span>
@@ -905,9 +905,14 @@
             </div>
 
             <div class="footer-actions no-print">
-                <button class="btn-pro btn-print" onclick="window.print()">Imprimir Comprobante</button>
+                <button class="btn-pro btn-print" onclick="window.print()">Imprimir Nota de Credito</button>
                 <a href="{{ route('nota_creditov.show', $nota_creditov->idnota_creditov) }}" class="btn-pro btn-ghost">Volver</a>
             </div>
+
+            @include('ventas.partials.hash_integridad', [
+                'hash' => $nota_creditov->hash_documento ?? null,
+                'hashValido' => $hashValido ?? null,
+            ])
 
         </div>
     </div>

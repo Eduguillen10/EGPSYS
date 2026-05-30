@@ -9,6 +9,8 @@ use App\Models\NotaDebitoV;
 use App\Models\NotaDebitovDetalle;
 use App\Models\Sucursales;
 use App\Models\Ventas;
+use App\Services\LegalDocumentHashService;
+use App\Services\MovimientoStockService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,6 +41,7 @@ class NotaDebitoVController extends Controller
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
             ->select(
                 'c.idnota_debitov',
+                'c.nro_nota_debito',
                 'c.idventa',
                 'c.usuario',
                 's.idsucursal',
@@ -67,7 +70,10 @@ class NotaDebitoVController extends Controller
             ->where('cli.nombre', 'LIKE', '%' . $query2 . '%')
             ->where('c.fecha_registro', 'LIKE', '%' . $query3 . '%')
             ->where('s.descripcion', 'LIKE', '%' . $query4 . '%')
-            ->where('c.nro_factura', 'LIKE', '%' . $query5 . '%')
+            ->where(function ($q) use ($query5) {
+                $q->where('c.nro_nota_debito', 'LIKE', '%' . $query5 . '%')
+                    ->orWhere('c.nro_factura', 'LIKE', '%' . $query5 . '%');
+            })
             ->where('cli.num_documento', 'LIKE', '%' . $query6 . '%')
             ->orderBy('c.idnota_debitov', 'desc')
             ->paginate(7);
@@ -155,6 +161,12 @@ class NotaDebitoVController extends Controller
                 ->get();
         }
 
+        $timbradoActivo = $this->timbradoActivo((int) $suc);
+        $previewTimbrado = $timbradoActivo->nro_timbrado ?? '';
+        $previewNroNota = $timbradoActivo
+            ? $this->generarNumeroNota($this->proximoIdTabla('nota_debito_venta', 'idnota_debitov'), $timbradoActivo->nro_serie)
+            : 'Sin timbrado activo';
+
         return view('ventas.nota_debitov.create', [
             'clientes' => $clientes,
             'sucursales' => $sucursales,
@@ -166,6 +178,8 @@ class NotaDebitoVController extends Controller
             'detallesSeleccionados' => $detallesSeleccionados,
             'fechaFacturaSeleccionada' => $request->get('fecha'),
             'conceptoSeleccionado' => $request->get('concepto'),
+            'previewNroNota' => $previewNroNota,
+            'previewTimbrado' => $previewTimbrado,
         ]);
     }
 
@@ -174,6 +188,12 @@ class NotaDebitoVController extends Controller
         DB::beginTransaction();
 
         try {
+            $timbradoActivo = $this->timbradoActivo((int) $request->get('idsucursal'));
+
+            if (! $timbradoActivo) {
+                throw new \RuntimeException('No existe timbrado activo para la sucursal seleccionada.');
+            }
+
             $nota = NotaDebitoV::create([
                 'idcliente' => (int) $request->get('idcliente'),
                 'num_documento' => $request->get('num_documento'),
@@ -182,8 +202,9 @@ class NotaDebitoVController extends Controller
                 'iddeposito' => (int) $request->get('iddeposito'),
                 'usuario' => $request->get('usuario'),
                 'nro_factura' => $request->get('nro_factura'),
+                'nro_nota_debito' => null,
                 'concepto' => $request->get('concepto'),
-                'timbrado' => $request->get('timbrado'),
+                'timbrado' => $timbradoActivo->nro_timbrado,
                 'fecha_factura' => $request->get('fecha_factura'),
                 'fecha_registro' => now()->toDateString(),
                 'estado' => 'Realizado',
@@ -198,7 +219,14 @@ class NotaDebitoVController extends Controller
             $totales = $this->guardarDetallesNuevos($nota, $request->get('idproducto'), $request->get('cantidad'), $request->get('precio_venta'));
 
             $nota->fill($totales);
+            $nota->nro_nota_debito = $this->generarNumeroNota($nota->idnota_debitov, $timbradoActivo->nro_serie);
             $nota->save();
+
+            $hashService = app(LegalDocumentHashService::class);
+            $nota->forceFill([
+                'hash_documento' => $hashService->hashNotaDebito((int) $nota->idnota_debitov),
+                'hash_version' => LegalDocumentHashService::VERSION,
+            ])->save();
 
             $this->recalcularDeudaVenta((int) $nota->idventa);
             $this->sincronizarCobroPendientePorVenta((int) $nota->idventa, (int) $nota->idcliente);
@@ -230,6 +258,37 @@ class NotaDebitoVController extends Controller
         return view('ventas.nota_debitov.show', [
             'nota_debitov' => $nota_debitov,
             'detalles' => $detalles,
+            'hashValido' => app(LegalDocumentHashService::class)->verificar(
+                $nota_debitov->hash_documento ?? null,
+                app(LegalDocumentHashService::class)->hashNotaDebito((int) $id)
+            ),
+        ]);
+    }
+
+    public function comprobante($id)
+    {
+        $nota_debitov = $this->consultaCabecera((int) $id);
+
+        if (! $nota_debitov) {
+            return redirect('ventas/nota_debitov')->with('error', 'Nota de debito no encontrada.');
+        }
+
+        $detalles = DB::table('nota_debito_venta_detalle as d')
+            ->join('productos as prod', 'd.idproducto', '=', 'prod.idproducto')
+            ->select('d.idnota_debitov_detalle', 'prod.idproducto', 'prod.descripcion as producto', 'd.cantidad', 'd.precio_venta', 'd.iva10', 'd.iva5', 'd.gravada10', 'd.gravada5', 'd.exenta', 'd.totalitems')
+            ->where('d.idnota_debitov', '=', $id)
+            ->orderBy('d.items')
+            ->get();
+
+        $hashService = app(LegalDocumentHashService::class);
+
+        return view('ventas.nota_debitov.comprobante', [
+            'nota_debitov' => $nota_debitov,
+            'detalles' => $detalles,
+            'hashValido' => $hashService->verificar(
+                $nota_debitov->hash_documento ?? null,
+                $hashService->hashNotaDebito((int) $id)
+            ),
         ]);
     }
 
@@ -314,9 +373,27 @@ class NotaDebitoVController extends Controller
                 $deltaStock = $yaAplicada ? ($cantidad - (int) $detalleAnterior->cantidad) : $cantidad;
 
                 if ($deltaStock > 0) {
-                    $this->descontarStock((int) $nota->idsucursal, (int) $nota->iddeposito, $idproducto, $deltaStock);
+                    $this->descontarStock(
+                        (int) $nota->idsucursal,
+                        (int) $nota->iddeposito,
+                        $idproducto,
+                        $deltaStock,
+                        (int) $nota->idnota_debitov,
+                        'ND_VENTA',
+                        'nota_debito_venta_detalle',
+                        'Ajuste de stock por modificacion de nota de debito venta'
+                    );
                 } elseif ($deltaStock < 0) {
-                    $this->sumarStock((int) $nota->idsucursal, (int) $nota->iddeposito, $idproducto, abs($deltaStock));
+                    $this->sumarStock(
+                        (int) $nota->idsucursal,
+                        (int) $nota->iddeposito,
+                        $idproducto,
+                        abs($deltaStock),
+                        (int) $nota->idnota_debitov,
+                        'ND_VENTA',
+                        'nota_debito_venta_detalle',
+                        'Reversion parcial por modificacion de nota de debito venta'
+                    );
                 }
 
                 $linea = $this->calcularLinea($idproducto, $cantidad, $precio, $items);
@@ -331,6 +408,12 @@ class NotaDebitoVController extends Controller
             $nota->fill($totales);
             $nota->estado = 'Realizado';
             $nota->save();
+
+            $hashService = app(LegalDocumentHashService::class);
+            $nota->forceFill([
+                'hash_documento' => $hashService->hashNotaDebito((int) $nota->idnota_debitov),
+                'hash_version' => LegalDocumentHashService::VERSION,
+            ])->save();
 
             if ((int) $totales['totalventa'] !== $oldTotal) {
                 $this->recalcularDeudaVenta((int) $nota->idventa);
@@ -369,13 +452,24 @@ class NotaDebitoVController extends Controller
                     ->get();
 
                 foreach ($detalles as $detalle) {
-                    $this->sumarStock((int) $nota->idsucursal, (int) $nota->iddeposito, (int) $detalle->idproducto, (int) $detalle->cantidad);
+                    $this->sumarStock(
+                        (int) $nota->idsucursal,
+                        (int) $nota->iddeposito,
+                        (int) $detalle->idproducto,
+                        (int) $detalle->cantidad,
+                        (int) $nota->idnota_debitov,
+                        'ND_VENTA',
+                        'nota_debito_venta_detalle',
+                        'Reversion por anulacion de nota de debito venta'
+                    );
                 }
 
             }
 
             $nota->estado = 'Anulado';
             $nota->concepto = trim((string) $nota->concepto . ' | ANULACION: ' . request('motivo_anulacion', 'Sin motivo informado'));
+            $nota->hash_anulacion = app(LegalDocumentHashService::class)
+                ->hashAnulacion('NOTA_DEBITO_VENTA', (int) $nota->idnota_debitov, request('motivo_anulacion'), Auth::user()->name ?? null);
             $nota->save();
 
             $this->recalcularDeudaVenta((int) $nota->idventa);
@@ -430,6 +524,7 @@ class NotaDebitoVController extends Controller
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
             ->select(
                 'c.idnota_debitov',
+                'c.nro_nota_debito',
                 'c.idventa',
                 'c.usuario',
                 's.idsucursal',
@@ -452,10 +547,35 @@ class NotaDebitoVController extends Controller
                 'c.nro_factura',
                 'c.estado',
                 'c.fecha_factura',
-                'c.fecha_vencimiento'
+                'c.fecha_vencimiento',
+                'c.hash_documento',
+                'c.hash_anulacion',
+                'c.hash_version'
             )
             ->where('c.idnota_debitov', '=', $id)
             ->first();
+    }
+
+    private function timbradoActivo(int $idsucursal): ?object
+    {
+        return DB::table('timbrado')
+            ->where('idsucursal', $idsucursal)
+            ->where('estado', 'Activo')
+            ->whereDate('fecha_vencimiento', '>=', now()->toDateString())
+            ->orderByDesc('idtimbrado')
+            ->first();
+    }
+
+    private function generarNumeroNota(int $idnota, ?string $serie): string
+    {
+        $serie = $serie ?: '001-001';
+
+        return $serie . '-' . str_pad((string) $idnota, 7, '0', STR_PAD_LEFT);
+    }
+
+    private function proximoIdTabla(string $tabla, string $pk): int
+    {
+        return ((int) DB::table($tabla)->max($pk)) + 1;
     }
 
     private function guardarDetallesNuevos(NotaDebitoV $nota, array $productos, array $cantidades, array $precios): array
@@ -472,7 +592,16 @@ class NotaDebitoVController extends Controller
                 throw new \RuntimeException('Producto, cantidad y precio deben ser mayores a cero.');
             }
 
-            $this->descontarStock((int) $nota->idsucursal, (int) $nota->iddeposito, $idproducto, $cantidad);
+            $this->descontarStock(
+                (int) $nota->idsucursal,
+                (int) $nota->iddeposito,
+                $idproducto,
+                $cantidad,
+                (int) $nota->idnota_debitov,
+                'ND_VENTA',
+                'nota_debito_venta_detalle',
+                'Salida por nota de debito venta'
+            );
 
             $linea = $this->calcularLinea($idproducto, $cantidad, $precio, $items);
             $linea['idnota_debitov'] = $nota->idnota_debitov;
@@ -551,7 +680,16 @@ class NotaDebitoVController extends Controller
         $totales['totalventa'] += (int) $linea['totalitems'];
     }
 
-    private function descontarStock(int $idsucursal, int $iddeposito, int $idproducto, int $cantidad): void
+    private function descontarStock(
+        int $idsucursal,
+        int $iddeposito,
+        int $idproducto,
+        int $cantidad,
+        ?int $idOrigen = null,
+        ?string $tipoOrigen = null,
+        ?string $detalleOrigen = null,
+        ?string $observacion = null
+    ): void
     {
         $stock = DB::table('stock')
             ->where('idsucursal', $idsucursal)
@@ -572,9 +710,33 @@ class NotaDebitoVController extends Controller
             ->where('iddeposito', $iddeposito)
             ->where('idproducto', $idproducto)
             ->decrement('cantidad', $cantidad);
+
+        if ($idOrigen !== null && $tipoOrigen !== null) {
+            app(MovimientoStockService::class)->registrar(
+                $idproducto,
+                $idsucursal,
+                $iddeposito,
+                $tipoOrigen,
+                $idOrigen,
+                $detalleOrigen,
+                'SALIDA',
+                (float) $cantidad,
+                null,
+                $observacion
+            );
+        }
     }
 
-    private function sumarStock(int $idsucursal, int $iddeposito, int $idproducto, int $cantidad): void
+    private function sumarStock(
+        int $idsucursal,
+        int $iddeposito,
+        int $idproducto,
+        int $cantidad,
+        ?int $idOrigen = null,
+        ?string $tipoOrigen = null,
+        ?string $detalleOrigen = null,
+        ?string $observacion = null
+    ): void
     {
         $baseStock = DB::table('stock')
             ->where('idsucursal', $idsucursal)
@@ -590,6 +752,21 @@ class NotaDebitoVController extends Controller
                 'idproducto' => $idproducto,
                 'cantidad' => $cantidad,
             ]);
+        }
+
+        if ($idOrigen !== null && $tipoOrigen !== null) {
+            app(MovimientoStockService::class)->registrar(
+                $idproducto,
+                $idsucursal,
+                $iddeposito,
+                $tipoOrigen,
+                $idOrigen,
+                $detalleOrigen,
+                'ENTRADA',
+                (float) $cantidad,
+                null,
+                $observacion
+            );
         }
     }
 

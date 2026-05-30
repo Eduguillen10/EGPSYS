@@ -7,6 +7,12 @@
                 <a href="{{ route('pedido.create') }}"><button class="btn btn-success">Nuevo</button></a>
                 <span>Total de Registros: {{ $total }}</span> 
             </h3>
+            @if (session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+            @if (session('info'))
+                <div class="alert alert-info">{{ session('info') }}</div>
+            @endif
             @include('compras/pedido.search')
         </div>
     </div>
@@ -34,14 +40,16 @@
                             <td>{{ $ped->estado }}</td>
                             <td>
                                 <a href="{{ route('pedido.show', $ped->idpedidocompra) }}"><button class="btn btn-primary">Detalles</button></a>
-                                <a href="" data-target="#modal-delete-{{$ped->idpedidocompra}}" data-toggle="modal"><button class="btn btn-danger">Eliminar</button></a>
+                                @if ($ped->estado !== 'Cancelado')
+                                    <a href="" data-target="#modal-delete-{{$ped->idpedidocompra}}" data-toggle="modal"><button class="btn btn-danger">Anular</button></a>
+                                @endif
                             </td>
                         </tr>
                         @include('compras.pedido.modal') 
                     @endforeach
                 </table>
             </div>
-            {{ $pedidos_compras->appends(Request::only(['searchText', 'searchText2', 'searchText3', 'searchText4', 'searchText5']))->render() }}
+            {{ $pedidos_compras->appends(Request::only(['searchText', 'searchText2', 'searchText3', 'searchText4', 'searchText5', 'searchText6']))->render() }}
         </div>
     </div>
 @endsection

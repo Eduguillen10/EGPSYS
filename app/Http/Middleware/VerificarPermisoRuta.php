@@ -26,6 +26,8 @@ class VerificarPermisoRuta
         'audit_logs' => 'audit_trail',
         'referenciales.estados' => 'estados_referenciales',
         'usuario' => 'usuarios',
+        'venta_credito_aceptacion' => 'venta',
+        'nota_remision_venta' => 'venta',
     ];
 
     /**

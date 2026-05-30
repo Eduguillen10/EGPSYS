@@ -49,12 +49,12 @@ class PresupuestosComprasController extends Controller
                                 'pc.idpedidocompra', 
                                 'pc.fecha', 
                                 'pc.fechavalidez', 
-                                'pc.totaliva10', 
-                                'pc.totaliva5', 
-                                'pc.totalgravada10', 
-                                'pc.totalgravada5', 
-                                'pc.totalexenta',
-                                'pc.totalpresupuesto_compra',
+                                'pc.montoiva10', 
+                                'pc.montoiva5', 
+                                'pc.montogravada10', 
+                                'pc.montogravada5', 
+                                'pc.montoexenta',
+                                'pc.montopresupuesto_compra',
                                 'pc.observacion',
                                 'pc.usuario',
                                 'pc.estado'
@@ -99,12 +99,12 @@ class PresupuestosComprasController extends Controller
             'pc.idpedidocompra', 
             'pc.fecha', 
             'pc.fechavalidez', 
-            'pc.totaliva10', 
-            'pc.totaliva5', 
-            'pc.totalgravada10', 
-            'pc.totalgravada5', 
-            'pc.totalexenta',
-            'pc.totalpresupuesto_compra',
+            'pc.montoiva10', 
+            'pc.montoiva5', 
+            'pc.montogravada10', 
+            'pc.montogravada5', 
+            'pc.montoexenta',
+            'pc.montopresupuesto_compra',
             'pc.observacion',
             'pc.usuario',
             'pc.estado'
@@ -140,7 +140,7 @@ class PresupuestosComprasController extends Controller
         ->join('sucursales as s', 's.idsucursal', '=', 'pc.idsucursal')
         ->join('proveedores as p', 'pc.idproveedor', '=', 'p.idproveedor')
         ->leftJoin('pedidos_compras as pedido', 'pc.idpedidocompra', '=', 'pedido.idpedidocompra') //para estirar la obs del pedido
-        ->select('pc.idpresupuestocompra', 's.idsucursal','s.descripcion', 'p.idproveedor','p.razonsocial', 'p.ruc', 'pc.idpedidocompra', 'pc.fecha', 'pc.fechavalidez', 'pc.totaliva10', 'pc.totaliva5', 'pc.totalgravada10', 'pc.totalgravada5', 'pc.totalexenta','pc.totalpresupuesto_compra','pc.observacion','pc.usuario','pc.estado')
+        ->select('pc.idpresupuestocompra', 's.idsucursal','s.descripcion', 'p.idproveedor','p.razonsocial', 'p.ruc', 'pc.idpedidocompra', 'pc.fecha', 'pc.fechavalidez', 'pc.montoiva10', 'pc.montoiva5', 'pc.montogravada10', 'pc.montogravada5', 'pc.montoexenta','pc.montopresupuesto_compra','pc.observacion','pc.usuario','pc.estado')
         
         ->where('pc.idpresupuestocompra', 'LIKE', '%'.$query.'%')
         ->where('pc.fecha', 'LIKE', '%'.$query2.'%')
@@ -152,7 +152,7 @@ class PresupuestosComprasController extends Controller
         ->whereNull('pc.idpedidocompra')
 
         ->orderBy('pc.idpresupuestocompra', 'desc')
-        ->groupBy('pc.idpresupuestocompra', 's.idsucursal','s.descripcion', 'p.idproveedor', 'p.razonsocial', 'p.ruc', 'pc.idpedidocompra', 'pc.fecha', 'pc.fechavalidez', 'pc.totaliva10', 'pc.totaliva5', 'pc.totalgravada10', 'pc.totalgravada5', 'pc.totalexenta','pc.totalpresupuesto_compra','pc.observacion','pc.usuario','pc.estado')
+        ->groupBy('pc.idpresupuestocompra', 's.idsucursal','s.descripcion', 'p.idproveedor', 'p.razonsocial', 'p.ruc', 'pc.idpedidocompra', 'pc.fecha', 'pc.fechavalidez', 'pc.montoiva10', 'pc.montoiva5', 'pc.montogravada10', 'pc.montogravada5', 'pc.montoexenta','pc.montopresupuesto_compra','pc.observacion','pc.usuario','pc.estado')
         
         ->paginate(10);
 
@@ -185,21 +185,40 @@ public function create()
 
 public function store (PresupuestosComprasFormRequest $request)
 {
+    $usuario = Auth::user();
+    if (!$usuario || !$usuario->trabaja_sucursal) {
+        return Redirect::back()
+            ->withInput()
+            ->withErrors(['idsucursal' => 'Debe seleccionar una sucursal antes de registrar el presupuesto.']);
+    }
+
     try {
         DB::beginTransaction();
+            $pedido = DB::table('pedidos_compras')
+                ->where('idpedidocompra', $request->get('idpedidocompra'))
+                ->where('idsucursal', $usuario->trabaja_sucursal)
+                ->where('estado', 'Pendiente')
+                ->first();
+
+            if (!$pedido) {
+                DB::rollBack();
+                return Redirect::back()
+                    ->withInput()
+                    ->withErrors(['idpedidocompra' => 'El pedido debe estar pendiente y pertenecer a la sucursal actual.']);
+            }
+
             $presupuesto=new PresupuestosCompras;
-            $presupuesto->idpresupuestocompra=$request->get('idpresupuestocompra');
             $presupuesto->idproveedor=$request->get('idproveedor');
-            $presupuesto->idsucursal=$request->get('idsucursal');                
+            $presupuesto->idsucursal=$usuario->trabaja_sucursal;                
             $presupuesto->idpedidocompra=$request->get('idpedidocompra');
             $presupuesto->observacion=$request->get('observacion');
-            $presupuesto->usuario=$request->get('usuario');
-            $presupuesto->totaliva10=$request->get('totaliva10');
-            $presupuesto->totaliva5=$request->get('totaliva5');
-            $presupuesto->totalgravada10=$request->get('totalgravada10');
-            $presupuesto->totalgravada5=$request->get('totalgravada5');
-            $presupuesto->totalexenta=$request->get('totalexenta');
-            $presupuesto->totalpresupuesto_compra=$request->get('totalpresupuesto_compra');
+            $presupuesto->usuario=$usuario->name;
+            $presupuesto->montoiva10=$request->get('montoiva10');
+            $presupuesto->montoiva5=$request->get('montoiva5');
+            $presupuesto->montogravada10=$request->get('montogravada10');
+            $presupuesto->montogravada5=$request->get('montogravada5');
+            $presupuesto->montoexenta=$request->get('montoexenta');
+            $presupuesto->montopresupuesto_compra=$request->get('montopresupuesto_compra');
             // Convertir la fecha del formato d-m-Y al formato Y-m-d
             $presupuesto->fechavalidez = $request->get('fechavalidez');
             //$presupuesto->fechavalidez=$request->get('fechavalidez');                   
@@ -230,15 +249,15 @@ public function store (PresupuestosComprasFormRequest $request)
             $sumgravada10=0;
             $sumgravada5=0;
             $sumexenta=0;
-            $sumtotalitems=0;
+            $summontoitems=0;
 
             while ($cont < count($idproducto)) {
                 $prod= $productos->where('idproducto','=',$idproducto[$cont])->first();
                 //Return dd($prod);
                 //  calculo de los demas campos que está en el notepad
                 $porcentaje = $prod->porcentaje;
-                $totalitems=0;
-                $totalitems= $cantidad[$cont]*$precio[$cont];
+                $montoitems=0;
+                $montoitems= $cantidad[$cont]*$precio[$cont];
                 
                 //Return dd($porcentaje);
                 
@@ -250,7 +269,7 @@ public function store (PresupuestosComprasFormRequest $request)
 
                     // Monto Gravado del 10 % y Exento
                     $gravada5=0;
-                    $m_gravada10=$totalitems;
+                    $m_gravada10=$montoitems;
                     $exenta=0; 
 
 
@@ -269,9 +288,9 @@ public function store (PresupuestosComprasFormRequest $request)
                         $imp=((100+$porcentaje)/$porcentaje);
 
                         // Monto Gravado del 5 % y Exento
-                        $m_gravada5=$totalitems; 
+                        $m_gravada5=$montoitems; 
                         $gravada10=0;
-                        $exenta=round((($totalitems) ) - $m_gravada5); 
+                        $exenta=round((($montoitems) ) - $m_gravada5); 
 
                         // IVA 5 %
                         $iva10=0;
@@ -289,7 +308,7 @@ public function store (PresupuestosComprasFormRequest $request)
                             // Monto Gravado y Exento
                             $gravada10= 0;
                             $gravada5= 0;
-                            $exenta= $totalitems;
+                            $exenta= $montoitems;
 
                             //iva sin IVA                                 
                             $iva10=0;
@@ -314,7 +333,7 @@ public function store (PresupuestosComprasFormRequest $request)
                     $detalle->gravada10= $gravada10;
                     $detalle->gravada5= $gravada5;
                     $detalle->exenta= $exenta;
-                    $detalle->totalitems= $totalitems;
+                    $detalle->montoitems= $montoitems;
 
 
                     $detalle->save();
@@ -327,26 +346,31 @@ public function store (PresupuestosComprasFormRequest $request)
                     $sumgravada10= $sumgravada10 + $gravada10;
                     $sumgravada5= $sumgravada5 + $gravada5;
                     $sumexenta= $sumexenta + $exenta;
-                    $sumtotalitems= $sumtotalitems + $totalitems;
+                    $summontoitems= $summontoitems + $montoitems;
             }
 
             $udpcabecera=DB::table('presupuestos_compras')
             ->where('idpresupuestocompra','=',$presupuesto->idpresupuestocompra)
-            ->update(['totaliva10'=>$sumiva10,
-                        'totaliva5'=>$sumiva5,
-                        'totalgravada10'=>$sumgravada10,
-                        'totalgravada5'=>$sumgravada5,
-                        'totalexenta'=>$sumexenta,
-                        'totalpresupuesto_compra'=>$sumtotalitems]);
+            ->update(['montoiva10'=>$sumiva10,
+                        'montoiva5'=>$sumiva5,
+                        'montogravada10'=>$sumgravada10,
+                        'montogravada5'=>$sumgravada5,
+                        'montoexenta'=>$sumexenta,
+                        'montopresupuesto_compra'=>$summontoitems]);
 
+            DB::table('pedidos_compras')
+                ->where('idpedidocompra', $presupuesto->idpedidocompra)
+                ->update(['estado' => 'Realizado']);
             
         DB::commit();
+        return Redirect::to('compras/presupuesto')->with('success', 'Operacion exitosa.');
         
-    } catch (Exception $e) {
+    } catch (\Throwable $e) {
         DB::rollback();
+        return Redirect::back()
+            ->withInput()
+            ->withErrors(['presupuesto' => 'No se pudo registrar el presupuesto. Verifique los datos e intente nuevamente.']);
     }
-
-    return Redirect::to('compras/presupuesto');
 
 }
 
@@ -364,7 +388,7 @@ public function show($id)
        //dd($presupuesto);
     $detalles=DB::table('presupuestos_compras_detalle as d')
        ->join('productos as p','d.idproducto','=','p.idproducto')
-       ->select('p.descripcion as producto','d.cantidad','d.precio','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.totalitems')
+       ->select('p.descripcion as producto','d.cantidad','d.precio','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.montoitems')
        ->where('d.idpresupuestocompra','=',$id) 
        ->get();
 
@@ -391,17 +415,10 @@ public function show($id)
             $idpedidocompra = $request->get('numero_pedido');
             $idproveedor = $request->get('proveedor');
             $fechavalidez = $request->get('fechavalidez');
-
-            // Validar que la fecha de validez sea posterior a la fecha actual
-            if (strtotime($fechavalidez) == strtotime(now())) {
-                return back()->with('error', 'La fecha de validez no puede ser el día actual. Seleccione una fecha posterior.');
+            if (!$fechavalidez || $fechavalidez < now()->toDateString()) {
+                return back()->with('error', 'La fecha de validez debe ser igual o posterior a la fecha actual.');
             }
-
-            if (strtotime($fechavalidez) < strtotime(now())) {
-                return back()->with('error', 'La fecha de validez no puede ser anterior a la fecha actual. Seleccione una fecha posterior.');
-            }
-
-            // Validar que el pedido y proveedor hayan sido seleccionados
+// Validar que el pedido y proveedor hayan sido seleccionados
             if (empty($idpedidocompra)) {
                 return back()->with('error', 'Debe seleccionar un número de pedido.');
             }
@@ -412,8 +429,10 @@ public function show($id)
 
             // Obtener los datos del pedido
             $pedidos=DB::table('pedidos_compras as pc')        
-            ->select('pc.idpedidocompra','pc.idsucursal','pc.observacion')
-            ->where('pc.idpedidocompra','=',$idpedidocompra)             
+            ->select('pc.idpedidocompra','pc.idsucursal','pc.observacion','pc.estado')
+            ->where('pc.idpedidocompra','=',$idpedidocompra)
+            ->where('pc.idsucursal', '=', Auth::user()->trabaja_sucursal)
+            ->where('pc.estado', '=', 'Pendiente')
             ->first();
 
              // Obtener los datos del proveedor
@@ -424,7 +443,7 @@ public function show($id)
 
             // Verificar si se encontraron los datos del pedido y proveedor
             if (!$pedidos || !$proveedores) {
-                return back()->with('error', 'Pedido o proveedor no encontrado.');
+                return back()->with('error', 'Pedido pendiente o proveedor no encontrado.');
             }
 
             //return dd($idpedidocompra,$proveedores);
@@ -440,7 +459,14 @@ public function show($id)
                 'usuario' => $user,
                 'observacion' => $pedidos->observacion,
                 'fecha' => now(),
-                'fechavalidez' => $fechavalidez // Guardar la fecha seleccionada
+                'fechavalidez' => $fechavalidez,
+                'montoiva10' => 0,
+                'montoiva5' => 0,
+                'montogravada10' => 0,
+                'montogravada5' => 0,
+                'montoexenta' => 0,
+                'montopresupuesto_compra' => 0,
+                'estado' => 'Pendiente',
             ]);
 
             $idcabpresupuesto = $inscab;
@@ -506,14 +532,14 @@ public function update(Request $request, $id)
         $sumgravada10=0;
         $sumgravada5=0;
         $sumexenta=0;
-        $sumtotalitems=0;
+        $summontoitems=0;
 
         foreach ($idpresupuestocompra_detalle as $key => $value) {
             
             $prod= $productos->where('idproducto', '=' ,$idproducto[$value])->first();
             $porcentaje = $prod->porcentaje;
-            $totalitems=0;
-            $totalitems= $cantidad[$value]*$precio[$value];
+            $montoitems=0;
+            $montoitems= $cantidad[$value]*$precio[$value];
                         
             if ($porcentaje==10){
                 // Impuesto IVA 10
@@ -523,7 +549,7 @@ public function update(Request $request, $id)
 
                 // Monto Gravado del 10 % y Exento
                 $gravada5=0;
-                $m_gravada10=$totalitems;
+                $m_gravada10=$montoitems;
                 $exenta=0; 
 
 
@@ -542,9 +568,9 @@ public function update(Request $request, $id)
                     $imp=((100+$porcentaje)/$porcentaje);
 
                     // Monto Gravado del 5 % y Exento
-                    $m_gravada5=$totalitems; 
+                    $m_gravada5=$montoitems; 
                     $gravada10=0;
-                    $exenta=round((($totalitems) ) - $m_gravada5); 
+                    $exenta=round((($montoitems) ) - $m_gravada5); 
 
                     // IVA 5 %
                     $iva10=0;
@@ -562,7 +588,7 @@ public function update(Request $request, $id)
                         // Monto Gravado y Exento
                         $gravada10= 0;
                         $gravada5= 0;
-                        $exenta= $totalitems;
+                        $exenta= $montoitems;
 
                         //iva sin IVA                                 
                         $iva10=0;
@@ -584,7 +610,7 @@ public function update(Request $request, $id)
                     'gravada10'=>$gravada10,
                     'gravada5'=>$gravada5,
                     'exenta'=>$exenta,
-                    'totalitems'=>$totalitems]);
+                    'montoitems'=>$montoitems]);
 
                 
                 $cont=$cont+1;
@@ -595,7 +621,7 @@ public function update(Request $request, $id)
                 $sumgravada10= $sumgravada10 + $gravada10;
                 $sumgravada5= $sumgravada5 + $gravada5;
                 $sumexenta= $sumexenta + $exenta;
-                $sumtotalitems= $sumtotalitems + $totalitems;
+                $summontoitems= $summontoitems + $montoitems;
         } //fin foreach
 
         // Validación adicional en el lado del servidor
@@ -606,12 +632,12 @@ public function update(Request $request, $id)
         //poner para actualizar el estado del pedido
         $udpcabecera=DB::table('presupuestos_compras')
         ->where('idpresupuestocompra','=',$id)
-        ->update(['totaliva10'=>$sumiva10,
-                    'totaliva5'=>$sumiva5,
-                    'totalgravada10'=>$sumgravada10,
-                    'totalgravada5'=>$sumgravada5,
-                    'totalexenta'=>$sumexenta,
-                    'totalpresupuesto_compra'=>$sumtotalitems,
+        ->update(['montoiva10'=>$sumiva10,
+                    'montoiva5'=>$sumiva5,
+                    'montogravada10'=>$sumgravada10,
+                    'montogravada5'=>$sumgravada5,
+                    'montoexenta'=>$sumexenta,
+                    'montopresupuesto_compra'=>$summontoitems,
                     'observacion' => $request->get('observacion'), // Agrega esta línea para actualizar el campo 'obs'
                     'estado' => 'Pendiente', // Cambiar el estado a "Pendiente"
                 ]);
@@ -707,4 +733,3 @@ public function update(Request $request, $id)
             return Redirect::to('presupuestos/presupuesto/' . $presupuesto->idpresupuestocompra);
         }*/
     }
-
