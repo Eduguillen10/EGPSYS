@@ -281,7 +281,9 @@ class NotaCreditoCController extends Controller
                             'totalexenta'=>$sumexenta,
                             'totalcompra'=>$sumtotalitems]); 
                      
-                $updateCuentaPagar=DB::update("Update cuenta_a_pagar SET saldo = saldo - ".$sumtotalitems." Where idcompra=".$nota_creditoc->idcompra);            
+                $updateCuentaPagar=DB::table('cuentas_a_pagar')
+                    ->where('idcompra', $nota_creditoc->idcompra)
+                    ->update(['montoapagar' => DB::raw('GREATEST(0, montoapagar - ' . (int) $sumtotalitems . ')')]);
                      
                
             DB::commit();
@@ -621,7 +623,9 @@ class NotaCreditoCController extends Controller
                     'totalcompra'=>$sumtotalitems                   
                 ]);
 
-        $updateCuentaPagar=DB::update("Update cuenta_a_pagar SET saldo = saldo - ".$sumtotalitems." Where idcompra=".$idcompra);          
+        $updateCuentaPagar=DB::table('cuentas_a_pagar')
+            ->where('idcompra', $idcompra)
+            ->update(['montoapagar' => DB::raw('GREATEST(0, montoapagar - ' . (int) $sumtotalitems . ')')]);
                 
          // Actualizar el estado en la tabla compra
         $udpOrdenEstado = DB::table('compra')

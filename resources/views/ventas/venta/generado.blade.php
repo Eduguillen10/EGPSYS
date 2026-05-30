@@ -871,6 +871,11 @@
           <button class="btn-pro btn-ghost" onclick="window.scrollTo({top:0, behavior:'smooth'})">Volver arriba</button>
         </div>
 
+        @include('ventas.partials.hash_integridad', [
+          'hash' => $venta->hash_documento ?? null,
+          'hashValido' => $hashValido ?? null,
+        ])
+
       </div>
     </div>
   </div>

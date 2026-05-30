@@ -977,6 +977,11 @@
                 <a href="{{ route('cobro.show', $cobros->id_cobro) }}" class="btn-pro btn-ghost">Volver</a>
             </div>
 
+            @include('ventas.partials.hash_integridad', [
+                'hash' => $cobros->hash_documento ?? null,
+                'hashValido' => $hashValido ?? null,
+            ])
+
         </div>
     </div>
 </div>

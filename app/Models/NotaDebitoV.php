@@ -21,6 +21,7 @@ class NotaDebitoV extends Model
         'iddeposito',
         'idcliente',
         'num_documento',
+        'nro_nota_debito',
         'nro_factura',
         'condicion',
         'fecha_registro',
@@ -36,6 +37,9 @@ class NotaDebitoV extends Model
         'totalexenta',
         'totalventa',
         'timbrado',
+        'hash_documento',
+        'hash_anulacion',
+        'hash_version',
     ];
 
     public function venta()

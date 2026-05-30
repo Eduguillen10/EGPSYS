@@ -4,7 +4,7 @@
 		<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
 			<div class="form-group">
 				<label for="idnota_debito_venta">Nro. Nota Debito</label>
-				<p>{{$nota_debitov->idnota_debitov}}</p>
+				<p>{{ $nota_debitov->nro_nota_debito ?? ('#' . $nota_debitov->idnota_debitov) }}</p>
 			</div>
 		</div>
 		@if($nota_debitov->idventa)
@@ -146,8 +146,16 @@
 
 	</div>
 
+	@include('ventas.partials.hash_integridad', [
+		'hash' => $nota_debitov->hash_documento ?? null,
+		'hashValido' => $hashValido ?? null,
+	])
+
 	<button class="btn btn-light" onclick="window.location.href='{{ url('ventas/nota_debitov') }}'" type="button">
 		<i class="fa fa-arrow-left"></i> Volver
 	</button>
+	<a href="{{ route('nota_debitov.comprobante', $nota_debitov->idnota_debitov) }}" target="_blank" class="btn btn-warning">
+		<i class="fa fa-print"></i> Comprobante
+	</a>
 
 @endsection

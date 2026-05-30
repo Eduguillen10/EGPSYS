@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Input;
 use App\Http\Requests\PedidosComprasFormRequest;
 use App\Models\PedidosCompras;
 use App\Models\PedidosComprasDetalle;
@@ -14,9 +13,6 @@ use Illuminate\Support\Facades\Auth;
 use DB;
 
 use Carbon\Carbon;
-use Response;
-use Illuminate\Support\Collection;
-
 class PedidosComprasController extends Controller
 {
     public function __construct()
@@ -102,13 +98,20 @@ class PedidosComprasController extends Controller
 
     public function store (PedidosComprasFormRequest $request)
     {
+        $usuario = Auth::user();
+        if (!$usuario || !$usuario->trabaja_sucursal) {
+            return Redirect::back()
+                ->withInput()
+                ->withErrors(['idsucursal' => 'Debe seleccionar una sucursal antes de registrar el pedido.']);
+        }
+
         try {
             DB::beginTransaction();
     
             $pedidos_compras = new PedidosCompras;
             $pedidos_compras->observacion = $request->get('observacion');
-            $pedidos_compras->usuario = $request->get('usuario');
-            $pedidos_compras->idsucursal = $request->get('idsucursal');
+            $pedidos_compras->usuario = $usuario->name;
+            $pedidos_compras->idsucursal = $usuario->trabaja_sucursal;
             $mytime = Carbon::now('America/Asuncion');
             $pedidos_compras->fecha = $mytime->toDateTimeString();
             $pedidos_compras->estado = 'Pendiente';
@@ -139,13 +142,15 @@ class PedidosComprasController extends Controller
             }
             
             DB::commit();
+            return Redirect::to('compras/pedido')->with('success', 'Operacion exitosa.');
             
 
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollback();
+            return Redirect::back()
+                ->withInput()
+                ->withErrors(['pedido' => 'No se pudo registrar el pedido. Verifique los datos e intente nuevamente.']);
         }
-    
-        return Redirect::to('compras/pedido');
     }
     
     public function show($id)
@@ -168,8 +173,12 @@ class PedidosComprasController extends Controller
     public function destroy($id)
     {
         $pedidos_compras=PedidosCompras::findOrFail($id);
-        $pedidos_compras->Estado='Cancelado';
+        if ($pedidos_compras->estado === 'Cancelado') {
+            return Redirect::to('compras/pedido')->with('info', 'El pedido ya se encuentra cancelado.');
+        }
+
+        $pedidos_compras->estado='Cancelado';
         $pedidos_compras->update();
-        return Redirect::to('compras/pedido');
+        return Redirect::to('compras/pedido')->with('success', 'Pedido Cancelado correctamente.');
     }
 }

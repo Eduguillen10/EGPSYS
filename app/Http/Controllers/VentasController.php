@@ -17,6 +17,8 @@ use App\Models\VentasDetalle;
 use App\Models\Timbrado;
 use App\Models\Sucursales;
 use App\Models\Depositos;
+use App\Services\LegalDocumentHashService;
+use App\Services\MovimientoStockService;
 use Illuminate\Support\Facades\Auth;
 
 
@@ -52,7 +54,34 @@ class VentasController extends Controller
         ->join('depositos as dep', 'v.iddeposito', '=', 'dep.iddeposito')
         ->join('clientes as c', 'v.idcliente', '=', 'c.idcliente') 
         ->join('timbrado as t', 'v.idtimbrado', '=', 't.idtimbrado')   
-        ->select('v.idventa', 'v.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'c.idcliente', 'c.nombre as cliente', 'c.num_documento', 'v.fecha', 'v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 't.idtimbrado', 't.nro_timbrado' ,'v.condicion', 'v.obs' , 'v.nro_factura','v.estado','v.cta_cte_cliente')
+        ->select(
+            'v.idventa',
+            'v.usuario',
+            's.idsucursal',
+            's.descripcion as sucursal',
+            'dep.iddeposito',
+            'dep.descripcion as deposito',
+            'c.idcliente',
+            'c.nombre as cliente',
+            'c.num_documento',
+            'v.fecha',
+            'v.totaliva10',
+            'v.totaliva5',
+            'v.totalgravada10',
+            'v.totalgravada5',
+            'v.totalexenta',
+            'v.totalventa',
+            't.idtimbrado',
+            't.nro_timbrado',
+            'v.condicion',
+            'v.obs',
+            'v.nro_factura',
+            'v.estado',
+            'v.cta_cte_cliente',
+            DB::raw("(SELECT COUNT(*) FROM venta_credito_aceptaciones vca WHERE vca.idventa = v.idventa AND vca.estado = 'Aceptado') as credito_aceptado"),
+            DB::raw("(SELECT MAX(vca.idaceptacion_credito) FROM venta_credito_aceptaciones vca WHERE vca.idventa = v.idventa AND vca.estado = 'Aceptado') as idaceptacion_credito"),
+            DB::raw("(SELECT MAX(nr.idnota_remision_venta) FROM nota_remision_venta nr WHERE nr.idventa = v.idventa AND nr.estado NOT IN ('Anulado', 'Anulada', 'A')) as idnota_remision_venta")
+        )
         ->where('v.idventa', 'LIKE', '%'.$query.'%')
         ->Where('c.nombre', 'LIKE', '%'.$query2.'%')
         ->Where('v.fecha', 'LIKE', '%'.$query3.'%')
@@ -316,6 +345,20 @@ class VentasController extends Controller
                     $detalle->totalitems   = $totalitems;
                     $detalle->save();
 
+                    app(MovimientoStockService::class)->registrar(
+                        $pid,
+                        (int) $request->get('idsucursal'),
+                        (int) $request->get('iddeposito'),
+                        'VENTA',
+                        (int) $venta->idventa,
+                        'venta_detalle',
+                        'SALIDA',
+                        $cant,
+                        null,
+                        'Salida por venta',
+                        $request->get('usuario')
+                    );
+
                     // Totales reales
                     $sumiva10 += $iva10;
                     $sumiva5 += $iva5;
@@ -338,6 +381,12 @@ class VentasController extends Controller
                     'saldo_factura'  => $sumtotalitems,
                 ]);
                 $venta->save();
+
+                $hashService = app(LegalDocumentHashService::class);
+                $venta->forceFill([
+                    'hash_documento' => $hashService->hashVenta((int) $venta->idventa),
+                    'hash_version' => LegalDocumentHashService::VERSION,
+                ])->save();
 
                 // CUENTA A COBRAR
                 $condicion = $request->get('condicion');
@@ -398,7 +447,34 @@ class VentasController extends Controller
             ->join('depositos as dep', 'v.iddeposito', '=', 'dep.iddeposito')
             ->join('clientes as c', 'v.idcliente', '=', 'c.idcliente') 
             ->join('timbrado as t', 'v.idtimbrado', '=', 't.idtimbrado')   
-            ->select('v.idventa', 'v.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'c.idcliente', 'c.nombre as cliente', 'c.num_documento', 'v.fecha', 'v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 't.idtimbrado', 't.nro_timbrado' ,'v.condicion', 'v.obs' , 'v.nro_factura','v.estado','v.cta_cte_cliente')   
+            ->select(
+                'v.idventa',
+                'v.usuario',
+                's.idsucursal',
+                's.descripcion as sucursal',
+                'dep.iddeposito',
+                'dep.descripcion as deposito',
+                'c.idcliente',
+                'c.nombre as cliente',
+                'c.num_documento',
+                'v.fecha',
+                'v.totaliva10',
+                'v.totaliva5',
+                'v.totalgravada10',
+                'v.totalgravada5',
+                'v.totalexenta',
+                'v.totalventa',
+                't.idtimbrado',
+                't.nro_timbrado',
+                'v.condicion',
+                'v.obs',
+                'v.nro_factura',
+                'v.estado',
+                'v.cta_cte_cliente',
+                DB::raw("(SELECT COUNT(*) FROM venta_credito_aceptaciones vca WHERE vca.idventa = v.idventa AND vca.estado = 'Aceptado') as credito_aceptado"),
+                DB::raw("(SELECT MAX(vca.idaceptacion_credito) FROM venta_credito_aceptaciones vca WHERE vca.idventa = v.idventa AND vca.estado = 'Aceptado') as idaceptacion_credito"),
+                DB::raw("(SELECT MAX(nr.idnota_remision_venta) FROM nota_remision_venta nr WHERE nr.idventa = v.idventa AND nr.estado NOT IN ('Anulado', 'Anulada', 'A')) as idnota_remision_venta")
+            )   
             
             ->where('v.idventa','=',$id)
             ->orderBy('v.idventa','desc')           
@@ -410,7 +486,25 @@ class VentasController extends Controller
            ->where('d.idventa','=',$id) 
            ->get();
 
-        return view("ventas.venta.show",["ventas"=>$ventas,"detalles"=>$detalles]);
+        $cuenta = DB::table('cuenta_cobrar')->where('idventa', $id)->first();
+        $aceptacionCredito = DB::table('venta_credito_aceptaciones')
+            ->where('idventa', $id)
+            ->where('estado', 'Aceptado')
+            ->orderByDesc('idaceptacion_credito')
+            ->first();
+        $notaRemision = DB::table('nota_remision_venta')
+            ->where('idventa', $id)
+            ->whereNotIn('estado', ['Anulado', 'Anulada', 'A'])
+            ->orderByDesc('idnota_remision_venta')
+            ->first();
+
+        return view("ventas.venta.show", [
+            "ventas" => $ventas,
+            "detalles" => $detalles,
+            "cuenta" => $cuenta,
+            "aceptacionCredito" => $aceptacionCredito,
+            "notaRemision" => $notaRemision,
+        ]);
     }
 
     public function destroy($id)
@@ -455,6 +549,20 @@ class VentasController extends Controller
                 ->where('iddeposito', $venta->iddeposito)
                 ->where('idproducto', $det->idproducto)
                 ->increment('cantidad', (float) $det->cantidad);
+
+            app(MovimientoStockService::class)->registrar(
+                (int) $det->idproducto,
+                (int) $venta->idsucursal,
+                (int) $venta->iddeposito,
+                'VENTA',
+                (int) $venta->idventa,
+                'venta_detalle',
+                'ENTRADA',
+                (float) $det->cantidad,
+                null,
+                'Reversion por anulacion de venta',
+                Auth::user()->name ?? null
+            );
         }
 
         $cobrosPendientes = DB::table('det_cobro as dc')
@@ -491,6 +599,8 @@ class VentasController extends Controller
         $venta->estado = 'Anulado';
         $venta->saldo_factura = 0;
         $venta->cta_cte_cliente = 'Anulado';
+        $venta->hash_anulacion = app(LegalDocumentHashService::class)
+            ->hashAnulacion('VENTA', (int) $venta->idventa, request('motivo_anulacion'), Auth::user()->name ?? null);
         $venta->save();
 
         DB::commit();
@@ -597,7 +707,7 @@ class VentasController extends Controller
             ->join('clientes as c', 'v.idcliente', '=', 'c.idcliente') 
             ->join('ciudades as ciu', 'c.idciudad', '=', 'ciu.idciudad') // Join con la tabla ciudad
             ->join('timbrado as t', 'v.idtimbrado', '=', 't.idtimbrado')   
-            ->select('v.idventa', 'v.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'c.idcliente', 'c.nombre as cliente', 'c.num_documento', 'c.direccion', 'c.idciudad', 'ciu.descripcion as ciudad', 'c.telefono' , 'v.fecha', 'v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 't.idtimbrado', 't.nro_timbrado', 't.fecha_inicial', 't.fecha_vencimiento' ,'v.condicion', 'v.obs' , 'v.nro_factura','v.estado','v.cta_cte_cliente')
+            ->select('v.idventa', 'v.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'c.idcliente', 'c.nombre as cliente', 'c.num_documento', 'c.direccion', 'c.idciudad', 'ciu.descripcion as ciudad', 'c.telefono' , 'v.fecha', 'v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 't.idtimbrado', 't.nro_timbrado', 't.fecha_inicial', 't.fecha_vencimiento' ,'v.condicion', 'v.obs' , 'v.nro_factura','v.estado','v.cta_cte_cliente', 'v.hash_documento', 'v.hash_anulacion', 'v.hash_version')
             ->where('v.idventa', $idventa)
             ->orderBy('v.idventa','asc')
             ->first();
@@ -612,6 +722,11 @@ class VentasController extends Controller
         
             
 
-        return view('ventas.venta.generado',["venta"=>$venta,"venta_detalle"=>$venta_detalle]);
+        $hashService = app(LegalDocumentHashService::class);
+        $hashValido = $venta
+            ? $hashService->verificar($venta->hash_documento ?? null, $hashService->hashVenta((int) $venta->idventa))
+            : false;
+
+        return view('ventas.venta.generado',["venta"=>$venta,"venta_detalle"=>$venta_detalle,"hashValido"=>$hashValido]);
     }
 }

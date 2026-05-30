@@ -18,7 +18,7 @@
 		<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
 			<div class="form-group">
 					<label for="sucursal">Nro Nota de Debito</label>
-					<p>{{$nota_debitov->idnota_debitov}}</p>
+					<p>{{ $nota_debitov->nro_nota_debito ?? ('#' . $nota_debitov->idnota_debitov) }}</p>
 			</div>
     	</div>
 		<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">

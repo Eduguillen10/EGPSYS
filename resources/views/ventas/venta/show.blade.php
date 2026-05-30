@@ -16,6 +16,12 @@
 				{{ session('error') }}
 			</div>
 		@endif   
+		@if(session('success'))
+			<div class="alert alert-success">{{ session('success') }}</div>
+		@endif
+		@if(session('info'))
+			<div class="alert alert-warning">{{ session('info') }}</div>
+		@endif
 	</div>
 </div>
 	<div class="row">
@@ -164,16 +170,16 @@
     			
 	</div>	
 
-	<button class="btn btn-light" onclick="window.location.href='{{ url('ventas/venta') }}'" type="button">
-		<i class="fa fa-arrow-left"></i> Volver
-	</button>	
 	@php
 		$mostrarCobrar = false;
+		$esCredito = mb_strtolower(trim((string) $ventas->condicion)) !== 'contado';
+		$creditoAceptado = !$esCredito || (bool) $aceptacionCredito;
+		$ventaAnulada = in_array(strtoupper(trim((string) $ventas->estado)), ['A', 'ANULADO', 'ANULADA'], true);
 
-		if (!in_array(strtoupper(trim((string) $ventas->estado)), ['A', 'ANULADO', 'ANULADA'], true)) {
+		if (!$ventaAnulada) {
 
 			// Saldo pendiente (fuente principal)
-			$cta = DB::table('cuenta_cobrar')->where('idventa', $ventas->idventa)->first();
+			$cta = $cuenta;
 			$saldo = $cta ? (int)$cta->saldo : (int)$ventas->saldo_factura;
 
 			// Cobros realizados imputados a esta venta (fuente de control)
@@ -189,4 +195,83 @@
 			$mostrarCobrar = ($saldo > 0);
 		}
 	@endphp
+
+	<div class="row">
+		<div class="col-lg-12">
+			<div class="panel panel-default">
+				<div class="panel-body">
+					<div class="col-lg-3">
+						<label>Respaldo de Credito</label>
+						<p>
+							@if(!$esCredito)
+								<span class="label label-default">No aplica</span>
+							@elseif($creditoAceptado)
+								<span class="label label-success">Firma fisica registrada</span>
+							@else
+								<span class="label label-warning">Pendiente de firma fisica</span>
+							@endif
+						</p>
+					</div>
+					<div class="col-lg-3">
+						<label>Nota de Remision</label>
+						<p>
+							@if($notaRemision)
+								<span class="label label-success">Emitida</span>
+							@else
+								<span class="label label-default">Pendiente</span>
+							@endif
+						</p>
+					</div>
+					<div class="col-lg-6">
+						<label>Acciones</label>
+						<p>
+							<a class="btn btn-light" href="{{ url('ventas/venta') }}">
+								<i class="fa fa-arrow-left"></i> Volver
+							</a>
+
+							<a class="btn btn-info" target="_blank" href="{{ route('venta.imprimirfactura', $ventas->idventa) }}">
+								<i class="fa fa-print"></i> Factura
+							</a>
+
+							@if($esCredito)
+								<a class="btn btn-warning" target="_blank" href="{{ route('venta_credito_aceptacion.plantilla', $ventas->idventa) }}">
+									<i class="fa fa-print"></i> Compromiso
+								</a>
+
+								@if($aceptacionCredito)
+									<a class="btn btn-success" href="{{ route('venta_credito_aceptacion.show', [$ventas->idventa, $aceptacionCredito->idaceptacion_credito]) }}">
+										<i class="fa fa-check"></i> Ver Firma
+									</a>
+								@elseif(!$ventaAnulada)
+									<a class="btn btn-warning" href="{{ route('venta_credito_aceptacion.create', $ventas->idventa) }}">
+										<i class="fa fa-pencil"></i> Registrar Firma
+									</a>
+								@endif
+							@endif
+
+							@if($notaRemision)
+								<a class="btn btn-primary" href="{{ route('nota_remision_venta.show', $notaRemision->idnota_remision_venta) }}">
+									<i class="fa fa-truck"></i> Ver Remision
+								</a>
+							@elseif(!$ventaAnulada)
+								<a class="btn btn-primary" href="{{ route('nota_remision_venta.create_from_venta', $ventas->idventa) }}">
+									<i class="fa fa-truck"></i> Nota Remision
+								</a>
+							@endif
+
+							@if($mostrarCobrar && $creditoAceptado)
+								<a class="btn btn-success" href="{{ route('cobro.cobrarfactura', $ventas->idventa) }}">
+									<i class="fa fa-credit-card"></i> Cobrar
+								</a>
+							@elseif($mostrarCobrar && $esCredito)
+								<button class="btn btn-success" disabled title="Debe registrar firma fisica primero">
+									<i class="fa fa-credit-card"></i> Cobrar
+								</button>
+							@endif
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 @endsection

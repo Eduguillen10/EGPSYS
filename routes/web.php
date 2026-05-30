@@ -17,6 +17,8 @@ use App\Http\Controllers\CajasController;
 use App\Http\Controllers\TipoArqueoController;
 use App\Http\Controllers\VehiculosController;
 use App\Http\Controllers\ChoferController;
+use App\Http\Controllers\TransportistaController;
+use App\Http\Controllers\DestinatarioRemisionController;
 use App\Http\Controllers\FormaCobroController;
 use App\Http\Controllers\EntidadEmisoraController;
 use App\Http\Controllers\TarjetaController;
@@ -33,12 +35,15 @@ use App\Http\Controllers\AccionController;
 use App\Http\Controllers\ReferencialEstadoController;
 use App\Http\Controllers\SeleccionarController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\MovimientoStockController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\PedidosComprasController;
 use App\Http\Controllers\PresupuestosComprasController;
 use App\Http\Controllers\OrdenComprasController;
 use App\Http\Controllers\CompraController;
+use App\Http\Controllers\CuentasPagarController;
+use App\Http\Controllers\LibroComprasController;
 use App\Http\Controllers\AjusteController;
 use App\Http\Controllers\CobroController;
 use App\Http\Controllers\VentasController;
@@ -47,6 +52,8 @@ use App\Http\Controllers\CuotaController;
 use App\Http\Controllers\LibroVentasController;
 use App\Http\Controllers\NotaCreditoVController;
 use App\Http\Controllers\NotaDebitoVController;
+use App\Http\Controllers\VentaCreditoAceptacionController;
+use App\Http\Controllers\NotaRemisionVentaController;
 
 use App\Http\Controllers\AperturaController;
 use Illuminate\Support\Facades\Route;
@@ -98,6 +105,8 @@ Route::resource('referenciales/cajas', CajasController::class);
 Route::resource('referenciales/tipo_arqueo', TipoArqueoController::class);
 Route::resource('referenciales/vehiculos', VehiculosController::class);
 Route::resource('referenciales/choferes', ChoferController::class);
+Route::resource('referenciales/transportistas', TransportistaController::class);
+Route::resource('referenciales/destinatarios_remision', DestinatarioRemisionController::class);
 Route::resource('referenciales/formacobro', FormaCobroController::class);
 Route::resource('referenciales/entidademisora', EntidadEmisoraController::class);
 Route::resource('referenciales/tarjetas', TarjetaController::class);
@@ -126,7 +135,8 @@ Route::get('/inicio/dashboard', [App\Http\Controllers\HomeController::class, 'in
 Route::get('/home', fn () => redirect()->route('inicio'))->name('home');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::resource('referenciales/stock', StockController::class);
-Route::resource('compras/pedido', PedidosComprasController::class);
+Route::get('referenciales/movimiento_stock', [MovimientoStockController::class, 'index'])->name('movimiento_stock.index');
+Route::resource('compras/pedido', PedidosComprasController::class)->except(['edit', 'update']);
 Route::controller(PresupuestosComprasController::class)->group(function () {
 
     Route::get('compras/presupuesto', 'index')->name('presupuesto.index');
@@ -165,6 +175,10 @@ Route::controller(CompraController::class)->group(function () {
     Route::post('compras/compra/insertar_ordenes', 'insertar_ordenes')->name('compra.insertar_ordenes');
 
 });
+
+Route::get('compras/cuentas_pagar', [CuentasPagarController::class, 'index'])->name('cuentas_pagar.index');
+Route::get('compras/libro_compras', [LibroComprasController::class, 'index'])->name('libro_compras.index');
+Route::post('compras/libro_compras/reporte', [LibroComprasController::class, 'reporte'])->name('libro_compras.reporte');
 
 Route::controller(AjusteController::class)->group(function () {
 
@@ -249,6 +263,29 @@ Route::controller(VentasController::class)->group(function () {
     Route::get('ventas/venta/imprimirfactura/{id}', 'imprimirfactura')->name('venta.imprimirfactura');
 });
 
+Route::controller(VentaCreditoAceptacionController::class)->group(function () {
+    Route::get('ventas/venta/{idventa}/compromiso-pago', 'plantilla')->name('venta_credito_aceptacion.plantilla');
+    Route::get('ventas/venta/{idventa}/aceptacion/create', 'create')->name('venta_credito_aceptacion.create');
+    Route::post('ventas/venta/{idventa}/aceptacion', 'store')->name('venta_credito_aceptacion.store');
+    Route::get('ventas/venta/{idventa}/aceptacion/{idaceptacion}', 'show')->name('venta_credito_aceptacion.show');
+    Route::get('ventas/venta/{idventa}/aceptacion/{idaceptacion}/comprobante', 'comprobante')->name('venta_credito_aceptacion.comprobante');
+});
+
+Route::controller(NotaRemisionVentaController::class)->group(function () {
+    Route::get('ventas/nota_remision', 'index')->name('nota_remision_venta.index');
+    Route::get('ventas/nota_remision/create', 'create')->name('nota_remision_venta.create');
+    Route::post('ventas/nota_remision', 'store')->name('nota_remision_venta.store');
+    Route::get('ventas/nota_remision/{idremision}/edit', 'edit')->name('nota_remision_venta.edit');
+    Route::put('ventas/nota_remision/{idremision}', 'update')->name('nota_remision_venta.update');
+    Route::get('ventas/nota_remision/{idremision}', 'show')->name('nota_remision_venta.show');
+    Route::get('ventas/nota_remision/{idremision}/comprobante', 'comprobante')->name('nota_remision_venta.comprobante');
+    Route::delete('ventas/nota_remision/{idremision}', 'destroy')->name('nota_remision_venta.destroy');
+    Route::get('ventas/venta/{idventa}/nota-remision/create', 'create')->name('nota_remision_venta.create_from_venta');
+    Route::post('ventas/venta/{idventa}/nota-remision', 'store')->name('nota_remision_venta.store_from_venta');
+    Route::get('ventas/venta/{idventa}/nota-remision/{idremision}', 'showForVenta')->name('nota_remision_venta.show_from_venta');
+    Route::get('ventas/venta/{idventa}/nota-remision/{idremision}/comprobante', 'comprobanteForVenta')->name('nota_remision_venta.comprobante_from_venta');
+});
+
 Route::controller(CuentaCobrarController::class)->group(function () {
     Route::get('ventas/cuenta_cobrar', 'index')->name('cuenta_cobrar.index');
 });
@@ -294,6 +331,7 @@ Route::controller(NotaDebitoVController::class)->group(function () {
     Route::get('ventas/nota_debitov/create', 'create')->name('nota_debitov.create');
     Route::post('ventas/nota_debitov', 'store')->name('nota_debitov.store');
 
+    Route::get('ventas/nota_debitov/{id}/comprobante', 'comprobante')->name('nota_debitov.comprobante');
     Route::get('ventas/nota_debitov/{id}', 'show')->name('nota_debitov.show');
     Route::get('ventas/nota_debitov/{id}/edit', 'edit')->name('nota_debitov.edit');
     Route::put('ventas/nota_debitov/{id}', 'update')->name('nota_debitov.update');

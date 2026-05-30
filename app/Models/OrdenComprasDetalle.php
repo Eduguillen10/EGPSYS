@@ -26,6 +26,6 @@ class OrdenComprasDetalle extends Model
         'gravada5',
         'exenta',
         'items',
-        'totalitems',
+        'montoitems',
     ];
 }

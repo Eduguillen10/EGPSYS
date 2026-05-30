@@ -6,56 +6,43 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class PresupuestosComprasFormRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
-    public function authorize()
+    public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array
-     */
-    public function rules()
+    public function rules(): array
     {
         return [
-            'usuario'=> 'required|max:100',
-            'idsucursal'=> 'required',
-            'idproveedor'=> 'required',
-            'fecha'=> 'required',
-            'estado'=>'max:10',
-            'totalpedido',
-            'idproducto'=> 'required',
-            'cantidad'=> 'required',
+            'idpedidocompra' => 'required|integer|exists:pedidos_compras,idpedidocompra',
+            'idproveedor' => 'required|integer|exists:proveedores,idproveedor',
+            'observacion' => 'nullable|string|max:100',
+            'idproducto' => 'required|array|min:1',
+            'idproducto.*' => 'required|integer|exists:productos,idproducto',
+            'cantidad' => 'required|array|min:1',
+            'cantidad.*' => 'required|numeric|min:1',
+            'precio_compra' => 'required|array|min:1',
+            'precio_compra.*' => 'required|numeric|min:1',
             'fechavalidez' => 'required|date|after_or_equal:today',
         ];
     }
 
-    public function messages()
+    public function messages(): array
     {
         return [
+            'idpedidocompra.required' => 'Debe seleccionar un pedido de compra.',
+            'idpedidocompra.exists' => 'El pedido seleccionado no existe.',
             'idproveedor.required' => 'El proveedor es obligatorio.',
             'idproveedor.exists' => 'El proveedor no existe.',
-            'fecha.required' => 'La fecha es obligatoria.',
-            'fecha.date' => 'La fecha no tiene un formato válido.',
-            'observacion.max' => 'La observación no puede tener más de 255 caracteres.',
-            'productos.required' => 'Debe seleccionar al menos un producto.',
-            'productos.*.idproducto.required' => 'El producto es obligatorio.',
-            'productos.*.idproducto.exists' => 'El producto no existe.',
-            'productos.*.cantidad.required' => 'La cantidad es obligatoria.',
-            'productos.*.cantidad.numeric' => 'La cantidad debe ser un número.',
-            'productos.*.cantidad.min' => 'La cantidad debe ser mayor o igual a 1.',
-            'productos.*.precio.required' => 'El precio es obligatorio.',
-            'productos.*.precio.numeric' => 'El precio debe ser un número.',
-            'productos.*.precio.min' => 'El precio debe ser mayor o igual a 0.',
+            'observacion.max' => 'La observacion no debe superar 100 caracteres.',
+            'idproducto.required' => 'Debe agregar al menos un producto.',
+            'cantidad.required' => 'Debe cargar la cantidad del producto.',
+            'cantidad.*.min' => 'La cantidad debe ser mayor o igual a 1.',
+            'precio_compra.required' => 'Debe cargar el precio de compra.',
+            'precio_compra.*.required' => 'Todos los productos deben tener precio de compra.',
+            'precio_compra.*.numeric' => 'El precio de compra debe ser numerico.',
+            'precio_compra.*.min' => 'El precio de compra debe ser mayor a 0.',
+            'fechavalidez.after_or_equal' => 'La fecha de validez debe ser igual o posterior a la fecha actual.',
         ];
     }
 }
-
-
-

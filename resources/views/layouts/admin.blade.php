@@ -120,6 +120,7 @@
                             'children' => [
                                 (object) ['id' => 'menu-productos-productos', 'label' => 'Productos', 'href' => url('/referenciales/productos'), 'permission' => 'productos', 'keywords' => 'Productos /referenciales/productos productos'],
                                 (object) ['id' => 'menu-productos-stock', 'label' => 'Stock', 'href' => url('/referenciales/stock'), 'permission' => 'stock', 'keywords' => 'Productos Stock /referenciales/stock stock'],
+                                (object) ['id' => 'menu-productos-movimiento-stock', 'label' => 'Historico de Stock', 'href' => url('/referenciales/movimiento_stock'), 'permission' => 'stock', 'keywords' => 'Productos Historico de Stock /referenciales/movimiento_stock movimiento_stock trazabilidad stock kardex'],
                             ],
                         ],
                         (object) [
@@ -133,6 +134,8 @@
                                 (object) ['id' => 'menu-compras-presupuestos', 'label' => 'Presupuestos de Compras', 'href' => url('/compras/presupuesto'), 'permission' => 'presupuesto', 'keywords' => 'Compras Presupuestos de Compras /compras/presupuesto presupuesto'],
                                 (object) ['id' => 'menu-compras-orden', 'label' => 'Orden de Compras', 'href' => url('/compras/orden'), 'permission' => 'orden', 'keywords' => 'Compras Orden de Compras /compras/orden orden'],
                                 (object) ['id' => 'menu-compras-compras', 'label' => 'Compras', 'href' => url('/compras/compra'), 'permission' => 'compra', 'keywords' => 'Compras /compras/compra compra'],
+                                (object) ['id' => 'menu-compras-cuentas-pagar', 'label' => 'Cuentas a Pagar', 'href' => url('/compras/cuentas_pagar'), 'permission' => 'compra', 'keywords' => 'Compras Cuentas a Pagar /compras/cuentas_pagar cuentas_pagar proveedores deuda'],
+                                (object) ['id' => 'menu-compras-libro', 'label' => 'Libro Compras', 'href' => url('/compras/libro_compras'), 'permission' => 'compra', 'keywords' => 'Compras Libro Compras /compras/libro_compras libro_compras fiscal iva'],
                                 (object) ['id' => 'menu-compras-ajustes', 'label' => 'Ajustes', 'href' => url('/compras/ajuste'), 'permission' => 'ajuste', 'keywords' => 'Compras Ajustes /compras/ajuste ajuste'],
                             ],
                         ],
@@ -150,6 +153,7 @@
                                 (object) ['id' => 'menu-ventas-libro', 'label' => 'Libro Ventas', 'href' => url('/ventas/libro_ventas'), 'permission' => 'libro_ventas', 'keywords' => 'Ventas Libro Ventas /ventas/libro_ventas libro_ventas'],
                                 (object) ['id' => 'menu-ventas-nota-credito', 'label' => 'Nota de Credito', 'href' => url('/ventas/nota_creditov'), 'permission' => 'nota_creditov', 'keywords' => 'Ventas Nota de Credito /ventas/nota_creditov nota_creditov'],
                                 (object) ['id' => 'menu-ventas-nota-debito', 'label' => 'Nota de Debito', 'href' => url('/ventas/nota_debitov'), 'permission' => 'nota_debitov', 'keywords' => 'Ventas Nota de Debito /ventas/nota_debitov nota_debitov'],
+                                (object) ['id' => 'menu-ventas-nota-remision', 'label' => 'Nota de Remision', 'href' => url('/ventas/nota_remision'), 'permission' => 'venta', 'keywords' => 'Ventas Nota de Remision /ventas/nota_remision nota_remision remision traslado mercaderia'],
                             ],
                         ],
                         (object) [
@@ -176,6 +180,8 @@
                                 (object) ['id' => 'menu-referenciales-tipo-arqueo', 'label' => 'Tipo Arqueo', 'href' => url('/referenciales/tipo_arqueo'), 'permission' => 'tipo_arqueo', 'keywords' => 'Referenciales Tipo Arqueo /referenciales/tipo_arqueo tipo_arqueo'],
                                 (object) ['id' => 'menu-referenciales-vehiculos', 'label' => 'Vehiculos', 'href' => url('/referenciales/vehiculos'), 'permission' => 'vehiculos', 'keywords' => 'Referenciales Vehiculos /referenciales/vehiculos vehiculos'],
                                 (object) ['id' => 'menu-referenciales-choferes', 'label' => 'Choferes', 'href' => url('/referenciales/choferes'), 'permission' => 'choferes', 'keywords' => 'Referenciales Choferes /referenciales/choferes choferes'],
+                                (object) ['id' => 'menu-referenciales-transportistas', 'label' => 'Transportistas', 'href' => url('/referenciales/transportistas'), 'permission' => 'transportistas', 'keywords' => 'Referenciales Transportistas /referenciales/transportistas transportistas traslado remision'],
+                                (object) ['id' => 'menu-referenciales-destinatarios-remision', 'label' => 'Destinatarios Remision', 'href' => url('/referenciales/destinatarios_remision'), 'permission' => 'destinatarios_remision', 'keywords' => 'Referenciales Destinatarios Remision /referenciales/destinatarios_remision destinatarios remision'],
                                 (object) ['id' => 'menu-referenciales-formacobro', 'label' => 'Forma Cobro', 'href' => url('/referenciales/formacobro'), 'permission' => 'formacobro', 'keywords' => 'Referenciales Forma Cobro /referenciales/formacobro formacobro'],
                                 (object) ['id' => 'menu-referenciales-tarjetas', 'label' => 'Tarjetas', 'href' => url('/referenciales/tarjetas'), 'permission' => 'tarjetas', 'keywords' => 'Referenciales Tarjetas /referenciales/tarjetas tarjetas'],
                                 (object) ['id' => 'menu-referenciales-entidad-emisora', 'label' => 'Entidad Emisora', 'href' => url('/referenciales/entidademisora'), 'permission' => 'entidademisora', 'keywords' => 'Referenciales Entidad Emisora /referenciales/entidademisora entidademisora'],

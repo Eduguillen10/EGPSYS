@@ -59,12 +59,12 @@ class OrdenComprasController extends Controller
                                 'pre.idpresupuestocompra',
                                 'pre.observacion as presupuesto_observacion',
                                 'oc.fecha',
-                                'oc.totaliva10', 
-                                'oc.totaliva5', 
-                                'oc.totalgravada10', 
-                                'oc.totalgravada5', 
-                                'oc.totalexenta',
-                                'oc.total_orden_compra',
+                                'oc.montoiva10', 
+                                'oc.montoiva5', 
+                                'oc.montogravada10', 
+                                'oc.montogravada5', 
+                                'oc.montoexenta',
+                                'oc.monto_orden_compra',
                                 'oc.observacion as orden_observacion',
                                 'oc.usuario',
                                 'oc.estado'
@@ -84,7 +84,7 @@ class OrdenComprasController extends Controller
         }
 
         if ($query4) {
-            $queryBuilder->where('oc.razonsocial', 'LIKE', '%' . $query4 . '%');
+            $queryBuilder->where('p.razonsocial', 'LIKE', '%' . $query4 . '%');
         }
     
         if ($query5) {
@@ -113,12 +113,12 @@ class OrdenComprasController extends Controller
             'pre.idpresupuestocompra',
             'pre.observacion',
             'oc.fecha', 
-            'oc.totaliva10', 
-            'oc.totaliva5', 
-            'oc.totalgravada10', 
-            'oc.totalgravada5', 
-            'oc.totalexenta',
-            'oc.total_orden_compra',
+            'oc.montoiva10', 
+            'oc.montoiva5', 
+            'oc.montogravada10', 
+            'oc.montogravada5', 
+            'oc.montoexenta',
+            'oc.monto_orden_compra',
             'oc.observacion',
             'oc.usuario',
             'oc.estado'
@@ -173,7 +173,7 @@ class OrdenComprasController extends Controller
         ->select(DB::raw('CONCAT(prod.codigo, " " ,prod.descripcion) AS producto'),'prod.idproducto')
         ->where('prod.estado','=','Activo')
         ->get();
-        return view("compras.orden.create",["proveedores"=>$proveedores,"sucursales"=>$sucursales,"depositos"=>$depositos,"productos"=>$productos,"presupuestos"=>$presupuestos]);
+        return view("compras.orden.create",["fecha"=>$fecha,"proveedores"=>$proveedores,"sucursales"=>$sucursales,"depositos"=>$depositos,"productos"=>$productos,"presupuestos"=>$presupuestos]);
     }
 
     public function store (OrdenComprasFormRequest $request)
@@ -188,17 +188,17 @@ class OrdenComprasController extends Controller
                 $orden->idproveedor=$request->get('idproveedor');
                 $orden->ruc=$request->get('ruc');
                 $orden->direccion=$request->get('direccion');
-                $orden->idsucursal=$request->get('idsucursal'); 
+                $orden->idsucursal=Auth::user()->trabaja_sucursal; 
                 $orden->iddeposito=$request->get('iddeposito');                 
                 $orden->idpresupuestocompra=$request->get('idpresupuestocompra');
                 $orden->observacion=$request->get('observacion');
-                $orden->usuario=$request->get('usuario');
-                $orden->totaliva10=$request->get('totaliva10');
-                $orden->totaliva5=$request->get('totaliva5');
-                $orden->totalgravada10=$request->get('totalgravada10');
-                $orden->totalgravada5=$request->get('totalgravada5');
-                $orden->totalexenta=$request->get('totalexenta');
-                $orden->total_orden_compra=$request->get('total_orden_compra');
+                $orden->usuario=Auth::user()->name;
+                $orden->montoiva10=$request->get('montoiva10');
+                $orden->montoiva5=$request->get('montoiva5');
+                $orden->montogravada10=$request->get('montogravada10');
+                $orden->montogravada5=$request->get('montogravada5');
+                $orden->montoexenta=$request->get('montoexenta');
+                $orden->monto_orden_compra=$request->get('monto_orden_compra');
                                    
                 $mytime = Carbon::now('America/Asuncion');
                 $orden->fecha=$mytime->toDateTimeString();
@@ -227,15 +227,15 @@ class OrdenComprasController extends Controller
                 $sumgravada10=0;
                 $sumgravada5=0;
                 $sumexenta=0;
-                $sumtotalitems=0;
+                $summontoitems=0;
 
                 while ($cont < count($idproducto)) {
                     $prod= $productos->where('idproducto','=',$idproducto[$cont])->first();
                     //Return dd($prod);
                     //  calculo de los demas campos que está en el notepad
                     $porcentaje = $prod->porcentaje;
-                    $totalitems=0;
-                    $totalitems= $cantidad[$cont]*$precio_compra[$cont];
+                    $montoitems=0;
+                    $montoitems= $cantidad[$cont]*$precio_compra[$cont];
                     
                     //Return dd($porcentaje);
                     
@@ -247,7 +247,7 @@ class OrdenComprasController extends Controller
 
                         // Monto Gravado del 10 % y Exento
                         $gravada5=0;
-                        $m_gravada10=$totalitems;
+                        $m_gravada10=$montoitems;
                         $exenta=0; 
 
 
@@ -266,9 +266,9 @@ class OrdenComprasController extends Controller
                             $imp=((100+$porcentaje)/$porcentaje);
 
                             // Monto Gravado del 5 % y Exento
-                            $m_gravada5=$totalitems; 
+                            $m_gravada5=$montoitems; 
                             $gravada10=0;
-                            $exenta=round((($totalitems) ) - $m_gravada5); 
+                            $exenta=round((($montoitems) ) - $m_gravada5); 
 
                             // IVA 5 %
                             $iva10=0;
@@ -286,7 +286,7 @@ class OrdenComprasController extends Controller
                                 // Monto Gravado y Exento
                                 $gravada10= 0;
                                 $gravada5= 0;
-                                $exenta= $totalitems;
+                                $exenta= $montoitems;
 
                                 //iva sin IVA                                 
                                 $iva10=0;
@@ -311,7 +311,7 @@ class OrdenComprasController extends Controller
                         $detalle->gravada10= $gravada10;
                         $detalle->gravada5= $gravada5;
                         $detalle->exenta= $exenta;
-                        $detalle->totalitems= $totalitems;
+                        $detalle->montoitems= $montoitems;
 
 
                         $detalle->save();
@@ -324,22 +324,22 @@ class OrdenComprasController extends Controller
                         $sumgravada10= $sumgravada10 + $gravada10;
                         $sumgravada5= $sumgravada5 + $gravada5;
                         $sumexenta= $sumexenta + $exenta;
-                        $sumtotalitems= $sumtotalitems + $totalitems;
+                        $summontoitems= $summontoitems + $montoitems;
                 }
 
                 $udpcabecera=DB::table('orden_compras')
                 ->where('idordencompra','=',$orden->idordencompra)
-                ->update(['totaliva10'=>$sumiva10,
-                            'totaliva5'=>$sumiva5,
-                            'totalgravada10'=>$sumgravada10,
-                            'totalgravada5'=>$sumgravada5,
-                            'totalexenta'=>$sumexenta,
-                            'total_orden_compra'=>$sumtotalitems]);
+                ->update(['montoiva10'=>$sumiva10,
+                            'montoiva5'=>$sumiva5,
+                            'montogravada10'=>$sumgravada10,
+                            'montogravada5'=>$sumgravada5,
+                            'montoexenta'=>$sumexenta,
+                            'monto_orden_compra'=>$summontoitems]);
 
                 
             DB::commit();
             
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollback();
         }
 
@@ -354,7 +354,7 @@ class OrdenComprasController extends Controller
             ->join('depositos as dep', 'oc.iddeposito', '=', 'dep.iddeposito')
             ->join('proveedores as p', 'oc.idproveedor', '=', 'p.idproveedor')  
             ->leftJoin('presupuestos_compras as pre', 'oc.idpresupuestocompra', '=', 'pre.idpresupuestocompra') //para estirar la obs del presupuesto      
-            ->select('oc.idordencompra', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.razonsocial as proveedor', 'p.ruc', 'p.direccion', 'oc.idpresupuestocompra', 'oc.fecha', 'oc.totaliva10', 'oc.totaliva5', 'oc.totalgravada10', 'oc.totalgravada5', 'oc.totalexenta', 'oc.total_orden_compra', 'oc.observacion', 'oc.estado','oc.usuario','pre.observacion as observacion_presupuesto')
+            ->select('oc.idordencompra', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.razonsocial as proveedor', 'p.ruc', 'p.direccion', 'oc.idpresupuestocompra', 'oc.fecha', 'oc.montoiva10', 'oc.montoiva5', 'oc.montogravada10', 'oc.montogravada5', 'oc.montoexenta', 'oc.monto_orden_compra', 'oc.observacion', 'oc.estado','oc.usuario','pre.observacion as observacion_presupuesto')
            ->where('oc.idordencompra','=',$id)
            ->orderBy('oc.idordencompra','desc')           
            ->first();
@@ -362,7 +362,7 @@ class OrdenComprasController extends Controller
 
         $detalles=DB::table('orden_detalle as d')
            ->join('productos as prod','d.idproducto','=','prod.idproducto')
-           ->select('prod.descripcion as producto','d.cantidad','d.precio_compra','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.totalitems')
+           ->select('prod.descripcion as producto','d.cantidad','d.precio_compra','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.montoitems')
            ->where('d.idordencompra','=',$id) 
            ->get();
 
@@ -378,93 +378,109 @@ class OrdenComprasController extends Controller
             $orden->save();
 
             return Redirect::to('compras/orden')->with('success', 'Orden cancelada correctamente.');
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             return Redirect::to('compras/orden')->with('error', 'Error al cancelar la orden.');
         }
     }
 
     public function insertar_presupuestos (Request $request)
     {
-        $idpresupuestocompra = $request->get('numero_presupuesto');        
+        $idpresupuestocompra = $request->get('numero_presupuesto');
         $iddeposito = $request->get('iddeposito');
-        //return dd( $iddeposito);
-        // Asigna el resultado de la consulta a la variable $presupuestos
-        $presupuestos = DB::table('presupuestos_compras as p')        
-            ->select('p.idpresupuestocompra','p.idsucursal','p.observacion','p.idproveedor')
-            ->where('p.idpresupuestocompra','=',$idpresupuestocompra)
-            ->first();
-        
-        if ($presupuestos) {
-            // Traer proveedor por first() para poder capturar su ruc
-            $proveedores = DB::table('proveedores as p')
-                ->select('p.idproveedor', 'p.razonsocial', 'p.ruc', 'p.direccion')
-                ->where('p.idproveedor', '=', $presupuestos->idproveedor)
-                ->first();
-            //return dd($presupuestos);
-        } else {
-            // Manejar el caso en el que $presupuestos es nulo
-            $error_message = "No se encontraron datos para el número de presupuesto proporcionado.";
-            // Puedes agregar más información al mensaje de error según tus necesidades.
-            return response()->json(['error' => $error_message], 404);
-            // Puedes cambiar el código de respuesta y el formato del mensaje según tus requisitos.
-                }
-            //return dd($presupuestos);
-        // Insertar en la tabla orden_compra
-        $user = Auth::user()->name;
-        $suc = Auth::user()->trabaja_sucursal;
-        $inscab = DB::table('orden_compras')->insertGetId([
-            'idpresupuestocompra' => $presupuestos->idpresupuestocompra,
-            'idproveedor' => $proveedores->idproveedor,
-            'ruc' => $proveedores->ruc,
-            'direccion' => $proveedores->direccion,
-            'idsucursal' => $suc,
-            'usuario' => $user,
-            'observacion' => $presupuestos->observacion, // Agregar la observación del presupuesto 
-            'iddeposito' => $iddeposito,
-            'fecha' => now(),
-            'estado' => 'Pendiente',  // Establece un valor por defecto
-        ]);
-        //return dd( $inscab);
-        $idcaborden = $inscab;     
-        //dd($idcaborden); // Agrega esta línea para depurar el valor de $idcaborden
-        // vas a traer mediante un get() el detalle de los presupuestos 
-        $presupuestos_compras_detalle=DB::table('presupuestos_compras_detalle as pcd')        
-        ->select('pcd.idpresupuestocompra_detalle', 'pcd.idpresupuestocompra', 'pcd.items','pcd.idproducto','pcd.cantidad','pcd.precio')
-        ->where('pcd.idpresupuestocompra', '=', $idpresupuestocompra)
-        ->get();
-        //dd($presupuestocdetalle);
-         
-        // Antes de la inserción, verifica que $idcaborden existe en la tabla presupuestocompra
-        
-        // Insertar detalles en la tabla orden_detalle
-        foreach ($presupuestos_compras_detalle as $detalle) {
-            DB::table('orden_detalle')->insert([
-                'idordencompra' => $idcaborden,
-                'items' => $detalle->items,
-                'idproducto' => $detalle->idproducto,
-                'cantidad' => $detalle->cantidad,
-                'precio_compra' => $detalle->precio
-            ]);
+
+        if (empty($idpresupuestocompra)) {
+            return back()->with('error', 'Debe seleccionar un presupuesto.');
         }
-       
-        return Redirect::to('compras/orden/'.$idcaborden.'/edit');
+
+        if (empty($iddeposito)) {
+            return back()->with('error', 'Debe seleccionar un deposito.');
+        }
+
+        $presupuestos = DB::table('presupuestos_compras as p')
+            ->select('p.idpresupuestocompra', 'p.idsucursal', 'p.observacion', 'p.idproveedor', 'p.estado')
+            ->where('p.idpresupuestocompra', '=', $idpresupuestocompra)
+            ->where('p.idsucursal', '=', Auth::user()->trabaja_sucursal)
+            ->where('p.estado', '=', 'Pendiente')
+            ->first();
+
+        $deposito = DB::table('depositos')->where('iddeposito', $iddeposito)->first();
+
+        if (!$presupuestos || !$deposito) {
+            return back()->with('error', 'Presupuesto pendiente o deposito no encontrado.');
+        }
+
+        $proveedores = DB::table('proveedores as p')
+            ->select('p.idproveedor', 'p.razonsocial', 'p.ruc', 'p.direccion')
+            ->where('p.idproveedor', '=', $presupuestos->idproveedor)
+            ->first();
+
+        if (!$proveedores) {
+            return back()->with('error', 'Proveedor no encontrado.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $user = Auth::user()->name;
+            $suc = Auth::user()->trabaja_sucursal;
+            $inscab = DB::table('orden_compras')->insertGetId([
+                'idpresupuestocompra' => $presupuestos->idpresupuestocompra,
+                'idproveedor' => $proveedores->idproveedor,
+                'ruc' => $proveedores->ruc,
+                'direccion' => $proveedores->direccion,
+                'idsucursal' => $suc,
+                'usuario' => $user,
+                'observacion' => $presupuestos->observacion,
+                'iddeposito' => $iddeposito,
+                'fecha' => now(),
+                'estado' => 'Pendiente',
+                'montoiva10' => 0,
+                'montoiva5' => 0,
+                'montogravada10' => 0,
+                'montogravada5' => 0,
+                'montoexenta' => 0,
+                'monto_orden_compra' => 0,
+            ]);
+
+            $presupuestos_compras_detalle = DB::table('presupuestos_compras_detalle as pcd')
+                ->select('pcd.idpresupuestocompra_detalle', 'pcd.idpresupuestocompra', 'pcd.items', 'pcd.idproducto', 'pcd.cantidad', 'pcd.precio')
+                ->where('pcd.idpresupuestocompra', '=', $idpresupuestocompra)
+                ->get();
+
+            foreach ($presupuestos_compras_detalle as $detalle) {
+                DB::table('orden_detalle')->insert([
+                    'idordencompra' => $inscab,
+                    'items' => $detalle->items,
+                    'idproducto' => $detalle->idproducto,
+                    'cantidad' => $detalle->cantidad,
+                    'precio_compra' => $detalle->precio,
+                    'montoitems' => 0,
+                ]);
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'No se pudo generar la orden desde el presupuesto.');
+        }
+
+        return Redirect::to('compras/orden/'.$inscab.'/edit');
 
     }
-
     public function edit($id)
     {
         $orden=DB::table('orden_compras as oc')
             ->join('sucursales as s', 'oc.idsucursal', '=', 's.idsucursal')
             ->join('depositos as dep', 'oc.iddeposito', '=', 'dep.iddeposito')
             ->join('proveedores as p', 'oc.idproveedor', '=', 'p.idproveedor')        
-            ->select('oc.idordencompra', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.razonsocial as proveedor', 'p.ruc', 'p.direccion', 'oc.idpresupuestocompra', 'oc.fecha', 'oc.totaliva10', 'oc.totaliva5', 'oc.totalgravada10', 'oc.totalgravada5', 'oc.totalexenta', 'oc.total_orden_compra', 'oc.observacion', 'oc.estado','oc.usuario')
+            ->select('oc.idordencompra', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.razonsocial as proveedor', 'p.ruc', 'p.direccion', 'oc.idpresupuestocompra', 'oc.fecha', 'oc.montoiva10', 'oc.montoiva5', 'oc.montogravada10', 'oc.montogravada5', 'oc.montoexenta', 'oc.monto_orden_compra', 'oc.observacion', 'oc.estado','oc.usuario')
            ->where('oc.idordencompra','=',$id)
            ->orderBy('oc.idordencompra','desc')           
            ->first();
 
         $detalles=DB::table('orden_detalle as d')
            ->join('productos as prod','d.idproducto','=','prod.idproducto')
-           ->select('d.idorden_detalle','prod.idproducto','prod.descripcion as producto','d.cantidad','d.precio_compra','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.totalitems')
+           ->select('d.idorden_detalle','prod.idproducto','prod.descripcion as producto','d.cantidad','d.precio_compra','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.montoitems')
            ->where('d.idordencompra','=',$id) 
            ->get();
 
@@ -496,16 +512,16 @@ class OrdenComprasController extends Controller
         $sumgravada10=0;
         $sumgravada5=0;
         $sumexenta=0;
-        $sumtotalitems=0;
+        $summontoitems=0;
 
         foreach ($idorden_detalle as $key => $value) {
             
             $prod= $productos->where('idproducto', '=' ,$idproducto[$value])->first();
             //  calculo de los demas campos que está en el notepad
             $porcentaje = $prod->porcentaje;
-            $totalitems=0;
-            $totalitems= $cantidad[$value]*$precio_compra[$value];
-            // return dd(['a'=>$cantidad[$value],'b'=>$precio_compra[$value],'c'=>$totalitems]);
+            $montoitems=0;
+            $montoitems= $cantidad[$value]*$precio_compra[$value];
+            // return dd(['a'=>$cantidad[$value],'b'=>$precio_compra[$value],'c'=>$montoitems]);
                         
             if ($porcentaje==10){
                 // Impuesto IVA 10
@@ -515,7 +531,7 @@ class OrdenComprasController extends Controller
 
                 // Monto Gravado del 10 % y Exento
                 $gravada5=0;
-                $m_gravada10=$totalitems;
+                $m_gravada10=$montoitems;
                 $exenta=0; 
 
 
@@ -534,9 +550,9 @@ class OrdenComprasController extends Controller
                     $imp=((100+$porcentaje)/$porcentaje);
 
                     // Monto Gravado del 5 % y Exento
-                    $m_gravada5=$totalitems; 
+                    $m_gravada5=$montoitems; 
                     $gravada10=0;
-                    $exenta=round((($totalitems) ) - $m_gravada5); 
+                    $exenta=round((($montoitems) ) - $m_gravada5); 
 
                     // IVA 5 %
                     $iva10=0;
@@ -554,7 +570,7 @@ class OrdenComprasController extends Controller
                         // Monto Gravado y Exento
                         $gravada10= 0;
                         $gravada5= 0;
-                        $exenta= $totalitems;
+                        $exenta= $montoitems;
 
                         //iva sin IVA                                 
                         $iva10=0;
@@ -577,7 +593,7 @@ class OrdenComprasController extends Controller
                     'gravada10'=>$gravada10,
                     'gravada5'=>$gravada5,
                     'exenta'=>$exenta,
-                    'totalitems'=>$totalitems
+                    'montoitems'=>$montoitems
                 ]);
 
                 
@@ -589,7 +605,7 @@ class OrdenComprasController extends Controller
                 $sumgravada10= $sumgravada10 + $gravada10;
                 $sumgravada5= $sumgravada5 + $gravada5;
                 $sumexenta= $sumexenta + $exenta;
-                $sumtotalitems= $sumtotalitems + $totalitems;
+                $summontoitems= $summontoitems + $montoitems;
         } //fin foreach
 
         // Validación adicional en el lado del servidor
@@ -599,12 +615,12 @@ class OrdenComprasController extends Controller
         
         $udpcabecera=DB::table('orden_compras')
         ->where('idordencompra','=',$id)
-        ->update(['totaliva10'=>$sumiva10,
-                    'totaliva5'=>$sumiva5,
-                    'totalgravada10'=>$sumgravada10,
-                    'totalgravada5'=>$sumgravada5,
-                    'totalexenta'=>$sumexenta,
-                    'total_orden_compra'=>$sumtotalitems,
+        ->update(['montoiva10'=>$sumiva10,
+                    'montoiva5'=>$sumiva5,
+                    'montogravada10'=>$sumgravada10,
+                    'montogravada5'=>$sumgravada5,
+                    'montoexenta'=>$sumexenta,
+                    'monto_orden_compra'=>$summontoitems,
                     'observacion' => $request->get('observacion'), // Agrega esta línea para actualizar el campo 'obs'
                     'estado' => 'Pendiente',// Cambiar el estado a "Pendiente"
                 ]);

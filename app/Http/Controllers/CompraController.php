@@ -17,6 +17,7 @@ use App\Models\Productos;
 use App\Models\Proveedores;
 use App\Models\Sucursales;
 use App\Models\Depositos;
+use App\Services\MovimientoStockService;
 use DB;
 use App\Models\Stock;
 use Log;
@@ -195,6 +196,12 @@ class CompraController extends Controller
 
         try {
             DB::beginTransaction();
+                $this->validarFacturaDuplicada(
+                    (int) $request->get('idproveedor'),
+                    (string) $request->get('timbrado'),
+                    (string) $request->get('nro_factura')
+                );
+
                 $compra=new Compras;
                 $compra->idproveedor=$request->get('idproveedor');                
                 $compra->idordencompra=$request->get('idordencompra');
@@ -374,6 +381,20 @@ class CompraController extends Controller
                             ]);
                         }
 
+                        app(MovimientoStockService::class)->registrar(
+                            (int) $idproducto[$cont],
+                            (int) $request->get('idsucursal'),
+                            (int) $request->get('iddeposito'),
+                            'COMPRA',
+                            (int) $compra->idcompra,
+                            'compra_detalle',
+                            'ENTRADA',
+                            (float) $cantidad[$cont],
+                            (float) $precio_compra[$cont],
+                            'Ingreso por compra',
+                            $request->get('usuario')
+                        );
+
 
                         $cont=$cont+1;
                         $items++;
@@ -408,6 +429,14 @@ class CompraController extends Controller
                     'estado' => 'Pendiente'
                     
                 ]);
+
+                $this->registrarLibroCompra($compra);
+
+                if ($compra->idordencompra) {
+                    DB::table('orden_compras')
+                        ->where('idordencompra', '=', $compra->idordencompra)
+                        ->update(['estado' => 'Realizado']);
+                }
                 
             DB::commit();
             
@@ -445,15 +474,56 @@ class CompraController extends Controller
 
     public function destroy($id)
     {
-        //ComprasDetalle::where('idcompra', $id)->delete();
         try {
-            $compra = Compras::findOrFail($id);
+            DB::beginTransaction();
+
+            $compra = Compras::where('idcompra', (int) $id)->lockForUpdate()->firstOrFail();
+
+            if ($this->estadoEsCancelado($compra->estado)) {
+                DB::rollBack();
+
+                return Redirect::to('compras/compra')->with('info', 'La compra ya estaba cancelada.');
+            }
+
+            if ($this->compraTieneStockAplicado((int) $compra->idcompra)) {
+                $detalles = ComprasDetalle::where('idcompra', (int) $compra->idcompra)->lockForUpdate()->get();
+
+                foreach ($detalles as $detalle) {
+                    $this->registrarSalidaStockCompra(
+                        (int) $compra->idsucursal,
+                        (int) $compra->iddeposito,
+                        (int) $detalle->idproducto,
+                        (float) $detalle->cantidad,
+                        (int) $compra->idcompra,
+                        'Anulacion de compra'
+                    );
+                }
+            }
+
+            DB::table('cuentas_a_pagar')
+                ->where('idcompra', (int) $compra->idcompra)
+                ->update([
+                    'montoapagar' => 0,
+                    'montopagado' => 0,
+                    'estado' => 'Cancelado',
+                ]);
+
             $compra->estado = 'Cancelado';
             $compra->save();
 
+            if ($compra->idordencompra) {
+                DB::table('orden_compras')
+                    ->where('idordencompra', '=', $compra->idordencompra)
+                    ->update(['estado' => 'Pendiente']);
+            }
+
+            DB::commit();
+
             return Redirect::to('compras/compra')->with('success', 'Compra cancelada correctamente.');
         } catch (Exception $e) {
-            return Redirect::to('compras/compra')->with('error', 'Error al cancelar la compra.');
+            DB::rollBack();
+
+            return Redirect::to('compras/compra')->with('error', 'Error al cancelar la compra: ' . $e->getMessage());
         }
     }
 
@@ -503,6 +573,15 @@ class CompraController extends Controller
             // Puedes cambiar el código de respuesta y el formato del mensaje según tus requisitos.
                 }
             //return dd($ordenes);
+        try {
+            DB::beginTransaction();
+
+        $this->validarFacturaDuplicada(
+            (int) $proveedores->idproveedor,
+            (string) $timbrado,
+            (string) $nro_factura
+        );
+
         // Insertar en la tabla compra
         $user = Auth::user()->name;
         $suc = Auth::user()->trabaja_sucursal;
@@ -516,7 +595,7 @@ class CompraController extends Controller
             'fecha' => now(),
             'fecha_factura' => $fecha_factura,
             'fecha_vencimiento' => $fecha_vencimiento,
-            'estado' => 'Realizado',  // Establece un valor por defecto
+            'estado' => 'Pendiente',
             'nro_factura' => $nro_factura,
             'timbrado' => $timbrado,
             'condicion' => $condicion,
@@ -544,8 +623,16 @@ class CompraController extends Controller
                 'precio_compra' => $detalle->precio_compra
             ]);
         }
+
+        DB::commit();
        
         return Redirect::to('compras/compra/'.$idcaborden.'/edit');
+
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
 
     }
 
@@ -571,11 +658,16 @@ class CompraController extends Controller
 
     public function update(Request $request, $id)
     {
+        return $this->actualizarCompraAplicada($request, (int) $id);
+
         // Validación adicional en el lado del servidor
         $request->validate([
             'precio_compra.*' => 'required|numeric|min:1', // Asegura que todos los precios_compra sean numéricos y mayores a 0
         ]);
 
+        DB::beginTransaction();
+
+        try {
         $idcompra_detalle = $request->get('idcompra_detalle');
         $cantidad = $request->get('cantidad');
         $precio_compra = $request->get('precio_compra');
@@ -717,6 +809,20 @@ class CompraController extends Controller
                     // Insertar un nuevo registro en stock
                     DB::insert("INSERT INTO stock (idsucursal, iddeposito, idproducto, cantidad) VALUES (?, ?, ?, ?)", [$idsucursal, $iddeposito, $idproducto[$value], $cantidad[$value]]);
                 }
+
+                app(MovimientoStockService::class)->registrar(
+                    (int) $idproducto[$value],
+                    (int) $idsucursal,
+                    (int) $iddeposito,
+                    'COMPRA',
+                    (int) $id,
+                    'compra_detalle',
+                    'ENTRADA',
+                    (float) $cantidad[$value],
+                    (float) $precio_compra[$value],
+                    'Ingreso por actualizacion de compra',
+                    $request->get('usuario')
+                );
                 
                 
             $cont=$cont+1;
@@ -765,8 +871,329 @@ class CompraController extends Controller
         $udpOrdenEstado = DB::table('orden_compras')
         ->where('idordencompra', '=', $idordencompra)
         ->update(['estado' => 'Realizado']);
+
+        DB::commit();
               
         return Redirect::to('compras/compra/'.$id);
 
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
+
+    }
+
+    private function actualizarCompraAplicada(Request $request, int $id)
+    {
+        $request->validate([
+            'idcompra_detalle' => 'required|array|min:1',
+            'idcompra_detalle.*' => 'required|integer|exists:compra_detalle,idcompra_detalle',
+            'idproducto' => 'required|array',
+            'cantidad' => 'required|array',
+            'precio_compra' => 'required|array',
+            'cantidad.*' => 'required|numeric|min:1',
+            'precio_compra.*' => 'required|numeric|min:1',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $compra = Compras::where('idcompra', $id)->lockForUpdate()->firstOrFail();
+
+            if ($this->estadoEsCancelado($compra->estado)) {
+                throw new Exception('No se puede modificar una compra cancelada.');
+            }
+
+            $yaAplicada = $this->compraTieneStockAplicado((int) $compra->idcompra);
+            $idsDetalle = $request->get('idcompra_detalle');
+            $cantidades = $request->get('cantidad');
+            $precios = $request->get('precio_compra');
+            $productos = $request->get('idproducto');
+
+            $sumiva10 = 0;
+            $sumiva5 = 0;
+            $sumgravada10 = 0;
+            $sumgravada5 = 0;
+            $sumexenta = 0;
+            $sumtotalitems = 0;
+            $items = 1;
+
+            foreach ($idsDetalle as $detalleId) {
+                $detalleId = (int) $detalleId;
+                $detalle = ComprasDetalle::where('idcompra_detalle', $detalleId)
+                    ->where('idcompra', (int) $compra->idcompra)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $idproducto = (int) ($productos[$detalleId] ?? $detalle->idproducto);
+                $cantidadNueva = (float) ($cantidades[$detalleId] ?? 0);
+                $precioCompra = (float) ($precios[$detalleId] ?? 0);
+
+                if ($cantidadNueva <= 0 || $precioCompra <= 0) {
+                    throw new Exception('La cantidad y el precio de compra deben ser mayores a cero.');
+                }
+
+                $linea = $this->calcularLineaCompra($idproducto, $cantidadNueva, $precioCompra, $items);
+                $cantidadAnterior = (float) $detalle->cantidad;
+                $deltaStock = $yaAplicada ? ($cantidadNueva - $cantidadAnterior) : $cantidadNueva;
+
+                if ($deltaStock > 0) {
+                    $this->registrarEntradaStockCompra(
+                        (int) $compra->idsucursal,
+                        (int) $compra->iddeposito,
+                        $idproducto,
+                        $deltaStock,
+                        (int) $compra->idcompra,
+                        $precioCompra,
+                        $yaAplicada ? 'Ajuste por modificacion de compra' : 'Ingreso por compra'
+                    );
+                } elseif ($deltaStock < 0) {
+                    $this->registrarSalidaStockCompra(
+                        (int) $compra->idsucursal,
+                        (int) $compra->iddeposito,
+                        $idproducto,
+                        abs($deltaStock),
+                        (int) $compra->idcompra,
+                        'Reversion parcial por modificacion de compra'
+                    );
+                }
+
+                $detalle->forceFill($linea);
+                $detalle->save();
+
+                $sumiva10 += $linea['iva10'];
+                $sumiva5 += $linea['iva5'];
+                $sumgravada10 += $linea['gravada10'];
+                $sumgravada5 += $linea['gravada5'];
+                $sumexenta += $linea['exenta'];
+                $sumtotalitems += $linea['totalitems'];
+                $items++;
+            }
+
+            $compra->forceFill([
+                'totaliva10' => $sumiva10,
+                'totaliva5' => $sumiva5,
+                'totalgravada10' => $sumgravada10,
+                'totalgravada5' => $sumgravada5,
+                'totalexenta' => $sumexenta,
+                'totalcompra' => $sumtotalitems,
+                'estado' => 'Realizado',
+            ]);
+            $compra->save();
+
+            $this->sincronizarCuentaPagar($compra);
+            $this->registrarLibroCompra($compra);
+
+            if ($compra->idordencompra) {
+                DB::table('orden_compras')
+                    ->where('idordencompra', '=', $compra->idordencompra)
+                    ->update(['estado' => 'Realizado']);
+            }
+
+            DB::commit();
+
+            return Redirect::to('compras/compra/'.$id)->with('success', 'Compra actualizada correctamente.');
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    private function calcularLineaCompra(int $idproducto, float $cantidad, float $precioCompra, int $items): array
+    {
+        $producto = DB::table('productos as prod')
+            ->join('tipo_impuesto as ti', 'prod.idtipoimpuesto', '=', 'ti.idtipoimpuesto')
+            ->select('prod.idproducto', 'ti.porcentaje')
+            ->where('prod.idproducto', $idproducto)
+            ->first();
+
+        if (! $producto) {
+            throw new Exception("Producto con ID {$idproducto} no encontrado.");
+        }
+
+        $porcentaje = (int) $producto->porcentaje;
+        $totalitems = (int) round($cantidad * $precioCompra);
+        $iva10 = 0;
+        $iva5 = 0;
+        $gravada10 = 0;
+        $gravada5 = 0;
+        $exenta = 0;
+
+        if ($porcentaje === 10) {
+            $iva10 = (int) round($totalitems / ((100 + $porcentaje) / $porcentaje));
+            $gravada10 = $totalitems - $iva10;
+        } elseif ($porcentaje === 5) {
+            $iva5 = (int) round($totalitems / ((100 + $porcentaje) / $porcentaje));
+            $gravada5 = $totalitems - $iva5;
+        } else {
+            $exenta = $totalitems;
+        }
+
+        return [
+            'idproducto' => $idproducto,
+            'cantidad' => (int) $cantidad,
+            'precio_compra' => (int) $precioCompra,
+            'items' => $items,
+            'iva10' => $iva10,
+            'iva5' => $iva5,
+            'gravada10' => $gravada10,
+            'gravada5' => $gravada5,
+            'exenta' => $exenta,
+            'totalitems' => $totalitems,
+        ];
+    }
+
+    private function compraTieneStockAplicado(int $idcompra): bool
+    {
+        if (DB::table('movimiento_stock')
+            ->where('tipo_origen', 'COMPRA')
+            ->where('id_origen', $idcompra)
+            ->exists()) {
+            return true;
+        }
+
+        return DB::table('compras')
+            ->where('idcompra', $idcompra)
+            ->where('totalcompra', '>', 0)
+            ->whereNotIn('estado', ['Pendiente'])
+            ->exists();
+    }
+
+    private function registrarEntradaStockCompra(
+        int $idsucursal,
+        int $iddeposito,
+        int $idproducto,
+        float $cantidad,
+        int $idcompra,
+        float $costoUnitario,
+        string $observacion
+    ): void {
+        $baseStock = DB::table('stock')
+            ->where('idsucursal', $idsucursal)
+            ->where('iddeposito', $iddeposito)
+            ->where('idproducto', $idproducto);
+
+        $updated = (clone $baseStock)->increment('cantidad', $cantidad);
+
+        if ($updated === 0) {
+            DB::table('stock')->insert([
+                'idsucursal' => $idsucursal,
+                'iddeposito' => $iddeposito,
+                'idproducto' => $idproducto,
+                'cantidad' => $cantidad,
+            ]);
+        }
+
+        app(MovimientoStockService::class)->registrar(
+            $idproducto,
+            $idsucursal,
+            $iddeposito,
+            'COMPRA',
+            $idcompra,
+            'compra_detalle',
+            'ENTRADA',
+            $cantidad,
+            $costoUnitario,
+            $observacion,
+            Auth::user()->name ?? null
+        );
+    }
+
+    private function registrarSalidaStockCompra(
+        int $idsucursal,
+        int $iddeposito,
+        int $idproducto,
+        float $cantidad,
+        int $idcompra,
+        string $observacion
+    ): void {
+        $stock = DB::table('stock')
+            ->where('idsucursal', $idsucursal)
+            ->where('iddeposito', $iddeposito)
+            ->where('idproducto', $idproducto)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $stock || (float) $stock->cantidad < $cantidad) {
+            $producto = DB::table('productos')->where('idproducto', $idproducto)->value('descripcion') ?? $idproducto;
+            $disponible = $stock ? (float) $stock->cantidad : 0;
+
+            throw new Exception("No se puede revertir stock para {$producto}. Disponible: {$disponible}, requerido: {$cantidad}.");
+        }
+
+        DB::table('stock')
+            ->where('idsucursal', $idsucursal)
+            ->where('iddeposito', $iddeposito)
+            ->where('idproducto', $idproducto)
+            ->decrement('cantidad', $cantidad);
+
+        app(MovimientoStockService::class)->registrar(
+            $idproducto,
+            $idsucursal,
+            $iddeposito,
+            'COMPRA',
+            $idcompra,
+            'compra_detalle',
+            'SALIDA',
+            $cantidad,
+            null,
+            $observacion,
+            Auth::user()->name ?? null
+        );
+    }
+
+    private function sincronizarCuentaPagar(Compras $compra): void
+    {
+        DB::table('cuentas_a_pagar')->updateOrInsert(
+            ['idcompra' => (int) $compra->idcompra],
+            [
+                'idproveedor' => (int) $compra->idproveedor,
+                'idsucursal' => (int) $compra->idsucursal,
+                'fecha_vencimiento' => $compra->fecha_vencimiento,
+                'fecha_factura' => $compra->fecha_factura,
+                'montopagado' => (int) $compra->totalcompra,
+                'montoapagar' => (int) $compra->totalcompra,
+                'estado' => 'Pendiente',
+            ]
+        );
+    }
+
+    private function registrarLibroCompra(Compras $compra): void
+    {
+        DB::table('libro_compras')->updateOrInsert(
+            ['idcompra' => (int) $compra->idcompra],
+            [
+                'idusuario' => (int) (Auth::id() ?? 0),
+                'idsucursal' => (int) $compra->idsucursal,
+                'total' => (int) $compra->totalcompra,
+                'totalexenta' => (int) $compra->totalexenta,
+                'totaliva5' => (int) $compra->totaliva5,
+                'totaliva10' => (int) $compra->totaliva10,
+            ]
+        );
+    }
+
+    private function validarFacturaDuplicada(int $idproveedor, string $timbrado, string $nroFactura, ?int $idcompra = null): void
+    {
+        $query = DB::table('compras')
+            ->where('idproveedor', $idproveedor)
+            ->where('timbrado', $timbrado)
+            ->where('nro_factura', $nroFactura)
+            ->whereNotIn('estado', ['Cancelado', 'Anulado', 'Anulada', 'A']);
+
+        if ($idcompra !== null) {
+            $query->where('idcompra', '<>', $idcompra);
+        }
+
+        if ($query->exists()) {
+            throw new Exception('Ya existe una compra activa con el mismo proveedor, timbrado y numero de factura.');
+        }
+    }
+
+    private function estadoEsCancelado(?string $estado): bool
+    {
+        return in_array(strtoupper(trim((string) $estado)), ['CANCELADO', 'CANCELADA', 'ANULADO', 'ANULADA', 'A'], true);
     }
 }

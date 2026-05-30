@@ -32,7 +32,10 @@ class Cobro extends Model
         'usuario',
         'idsucursal',
         'idcliente',
-        'idcaja'          
+        'idcaja',
+        'hash_documento',
+        'hash_anulacion',
+        'hash_version',
      ];
 
     protected $guarded=[

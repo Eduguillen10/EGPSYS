@@ -17,6 +17,8 @@ use App\Models\Ventas;
 use DB;
 use App\Models\Stock;
 use App\Models\Sucursales;
+use App\Services\LegalDocumentHashService;
+use App\Services\MovimientoStockService;
 use Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -48,12 +50,15 @@ class NotaCreditoVController extends Controller
                 ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
                 ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito')
                 ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
-                ->select('c.idnota_creditov', 'c.idventa', 'c.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalventa', 'c.timbrado', 'c.condicion', 'c.concepto', 'c.nro_factura', 'c.estado', 'c.fecha_factura', 'c.fecha_vencimiento')
+                ->select('c.idnota_creditov', 'c.nro_nota_credito', 'c.idventa', 'c.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalventa', 'c.timbrado', 'c.condicion', 'c.concepto', 'c.nro_factura', 'c.estado', 'c.fecha_factura', 'c.fecha_vencimiento')
                 ->where('c.idnota_creditov', 'LIKE', '%' . $query . '%')
                 ->Where('cli.nombre', 'LIKE', '%' . $query2 . '%')
                 ->Where('c.fecha_registro', 'LIKE', '%' . $query3 . '%')
                 ->Where('s.descripcion', 'LIKE', '%' . $query4 . '%')
-                ->Where('c.nro_factura', 'LIKE', '%' . $query5 . '%')
+                ->where(function ($q) use ($query5) {
+                    $q->where('c.nro_nota_credito', 'LIKE', '%' . $query5 . '%')
+                        ->orWhere('c.nro_factura', 'LIKE', '%' . $query5 . '%');
+                })
                 ->Where('cli.num_documento', 'LIKE', '%' . $query6 . '%')
 
                 ->orderBy('c.idnota_creditov', 'desc')
@@ -120,6 +125,12 @@ class NotaCreditoVController extends Controller
                 ->get();
         }
 
+        $timbradoActivo = $this->timbradoActivo((int) $suc);
+        $previewTimbrado = $timbradoActivo->nro_timbrado ?? '';
+        $previewNroNota = $timbradoActivo
+            ? $this->generarNumeroNota($this->proximoIdTabla('nota_credito_venta', 'idnota_creditov'), $timbradoActivo->nro_serie)
+            : 'Sin timbrado activo';
+
         return view("ventas.nota_creditov.create", [
             "clientes" => $clientes,
             "sucursales" => $sucursales,
@@ -131,6 +142,8 @@ class NotaCreditoVController extends Controller
             'detallesSeleccionados' => $detallesSeleccionados,
             'fechaFacturaSeleccionada' => $request->get('fecha'),
             'conceptoSeleccionado' => $request->get('concepto'),
+            'previewNroNota' => $previewNroNota,
+            'previewTimbrado' => $previewTimbrado,
         ]);
     }
 
@@ -138,6 +151,12 @@ class NotaCreditoVController extends Controller
     {
         try {
             DB::beginTransaction();
+            $timbradoActivo = $this->timbradoActivo((int) $request->get('idsucursal'));
+
+            if (! $timbradoActivo) {
+                throw new \RuntimeException('No existe timbrado activo para la sucursal seleccionada.');
+            }
+
             $nota_creditov = new NotaCreditoV;
             $nota_creditov->idcliente = $request->get('idcliente');
             $nota_creditov->num_documento = $request->get('num_documento');
@@ -148,7 +167,7 @@ class NotaCreditoVController extends Controller
             $nota_creditov->nro_factura = $request->get('nro_factura');
             //$nota_creditov->condicion=$request->get('condicion');   *****************************************  ver esto             
             $nota_creditov->concepto = $request->get('concepto');
-            $nota_creditov->timbrado = $request->get('timbrado');
+            $nota_creditov->timbrado = $timbradoActivo->nro_timbrado;
             $nota_creditov->totaliva10 = $request->get('totaliva10');
             $nota_creditov->totaliva5 = $request->get('totaliva5');
             $nota_creditov->totalgravada10 = $request->get('totalgravada10');
@@ -164,6 +183,8 @@ class NotaCreditoVController extends Controller
 
             //return dd($nota_creditov);
 
+            $nota_creditov->save();
+            $nota_creditov->nro_nota_credito = $this->generarNumeroNota($nota_creditov->idnota_creditov, $timbradoActivo->nro_serie);
             $nota_creditov->save();
 
             $idproducto = $request->get('idproducto');
@@ -281,7 +302,16 @@ class NotaCreditoVController extends Controller
                 $pid = (int) $idproducto[$cont];
                 $cant = (float) $cantidad[$cont];
 
-                $this->sumarStock((int) $request->get('idsucursal'), (int) $request->get('iddeposito'), $pid, $cant);
+                $this->sumarStock(
+                    (int) $request->get('idsucursal'),
+                    (int) $request->get('iddeposito'),
+                    $pid,
+                    $cant,
+                    (int) $nota_creditov->idnota_creditov,
+                    'NC_VENTA',
+                    'nota_credito_venta_detalle',
+                    'Devolucion por nota de credito venta'
+                );
 
 
                 $cont = $cont + 1;
@@ -350,6 +380,12 @@ class NotaCreditoVController extends Controller
             $this->recalcularDeudaVenta($idventa);
             $this->sincronizarCobroPendientePorVenta($idventa, $idcliente);
 
+            $hashService = app(LegalDocumentHashService::class);
+            $nota_creditov->forceFill([
+                'hash_documento' => $hashService->hashNotaCredito((int) $nota_creditov->idnota_creditov),
+                'hash_version' => LegalDocumentHashService::VERSION,
+            ])->save();
+
             DB::commit();
 
         } catch (\Throwable $e) {
@@ -366,17 +402,22 @@ class NotaCreditoVController extends Controller
     public function show($id)
     {
         [$nota_creditov, $detalles] = $this->datosComprobante((int) $id);
+        $hashService = app(LegalDocumentHashService::class);
+        $hashValido = $hashService->verificar($nota_creditov->hash_documento ?? null, $hashService->hashNotaCredito((int) $id));
 
-        return view("ventas.nota_creditov.show", ["nota_creditov" => $nota_creditov, "detalles" => $detalles]);
+        return view("ventas.nota_creditov.show", ["nota_creditov" => $nota_creditov, "detalles" => $detalles, "hashValido" => $hashValido]);
     }
 
     public function comprobante($id)
     {
         [$nota_creditov, $detalles] = $this->datosComprobante((int) $id);
+        $hashService = app(LegalDocumentHashService::class);
+        $hashValido = $hashService->verificar($nota_creditov->hash_documento ?? null, $hashService->hashNotaCredito((int) $id));
 
         return view("ventas.nota_creditov.comprobante", [
             "nota_creditov" => $nota_creditov,
             "detalles" => $detalles,
+            "hashValido" => $hashValido,
         ]);
     }
 
@@ -420,7 +461,16 @@ class NotaCreditoVController extends Controller
                 $pid = (int) $det->idproducto;
                 $cant = (float) $det->cantidad;
 
-                $this->descontarStock((int) $nc->idsucursal, (int) $nc->iddeposito, $pid, $cant);
+                $this->descontarStock(
+                    (int) $nc->idsucursal,
+                    (int) $nc->iddeposito,
+                    $pid,
+                    $cant,
+                    (int) $nc->idnota_creditov,
+                    'NC_VENTA',
+                    'nota_credito_venta_detalle',
+                    'Reversion por anulacion de nota de credito venta'
+                );
             }
 
             \Log::info('DESTROY STOCK OK');
@@ -482,6 +532,8 @@ class NotaCreditoVController extends Controller
 
             // ====== MARCAR NC ANULADA
             $nc->estado = 'Anulado';
+            $nc->hash_anulacion = app(LegalDocumentHashService::class)
+                ->hashAnulacion('NOTA_CREDITO_VENTA', (int) $nc->idnota_creditov, request('motivo_anulacion'), Auth::user()->name ?? null);
             $nc->save();
 
             $this->recalcularDeudaVenta((int) $nc->idventa);
@@ -547,7 +599,7 @@ class NotaCreditoVController extends Controller
             ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
             ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito')
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
-            ->select('c.idnota_creditov', 'c.idventa', 'c.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalventa', 'c.timbrado', 'c.condicion', 'c.concepto', 'c.nro_factura', 'c.estado', 'c.fecha_factura')
+            ->select('c.idnota_creditov', 'c.nro_nota_credito', 'c.idventa', 'c.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalventa', 'c.timbrado', 'c.condicion', 'c.concepto', 'c.nro_factura', 'c.estado', 'c.fecha_factura')
             ->where('c.idnota_creditov', '=', $id)
             ->orderBy('c.idnota_creditov', 'desc')
             ->first();
@@ -725,10 +777,28 @@ class NotaCreditoVController extends Controller
 
             if ($deltaQty != 0) {
                 if ($deltaQty > 0) {
-                    $this->sumarStock((int) $idsucursal, (int) $iddeposito, $pid, (float) $deltaQty);
+                    $this->sumarStock(
+                        (int) $idsucursal,
+                        (int) $iddeposito,
+                        $pid,
+                        (float) $deltaQty,
+                        (int) $id,
+                        'NC_VENTA',
+                        'nota_credito_venta_detalle',
+                        'Ajuste de stock por modificacion de nota de credito venta'
+                    );
                 } else {
                     $abs = abs($deltaQty);
-                    $this->descontarStock((int) $idsucursal, (int) $iddeposito, $pid, (float) $abs);
+                    $this->descontarStock(
+                        (int) $idsucursal,
+                        (int) $iddeposito,
+                        $pid,
+                        (float) $abs,
+                        (int) $id,
+                        'NC_VENTA',
+                        'nota_credito_venta_detalle',
+                        'Reversion parcial por modificacion de nota de credito venta'
+                    );
                 }
             }
 
@@ -817,6 +887,13 @@ class NotaCreditoVController extends Controller
         $this->recalcularDeudaVenta((int) $idventa);
         $this->sincronizarCobroPendientePorVenta((int) $idventa, (int) $idcliente);
 
+        $notaActualizada = NotaCreditoV::findOrFail((int) $id);
+        $hashService = app(LegalDocumentHashService::class);
+        $notaActualizada->forceFill([
+            'hash_documento' => $hashService->hashNotaCredito((int) $id),
+            'hash_version' => LegalDocumentHashService::VERSION,
+        ])->save();
+
         DB::commit();
 
         return Redirect::to('ventas/nota_creditov/' . $id);
@@ -829,7 +906,16 @@ class NotaCreditoVController extends Controller
 
     }
 
-    private function sumarStock(int $idsucursal, int $iddeposito, int $idproducto, float $cantidad): void
+    private function sumarStock(
+        int $idsucursal,
+        int $iddeposito,
+        int $idproducto,
+        float $cantidad,
+        ?int $idOrigen = null,
+        ?string $tipoOrigen = null,
+        ?string $detalleOrigen = null,
+        ?string $observacion = null
+    ): void
     {
         $baseStock = DB::table('stock')
             ->where('idsucursal', $idsucursal)
@@ -846,9 +932,33 @@ class NotaCreditoVController extends Controller
                 'cantidad' => $cantidad,
             ]);
         }
+
+        if ($idOrigen !== null && $tipoOrigen !== null) {
+            app(MovimientoStockService::class)->registrar(
+                $idproducto,
+                $idsucursal,
+                $iddeposito,
+                $tipoOrigen,
+                $idOrigen,
+                $detalleOrigen,
+                'ENTRADA',
+                $cantidad,
+                null,
+                $observacion
+            );
+        }
     }
 
-    private function descontarStock(int $idsucursal, int $iddeposito, int $idproducto, float $cantidad): void
+    private function descontarStock(
+        int $idsucursal,
+        int $iddeposito,
+        int $idproducto,
+        float $cantidad,
+        ?int $idOrigen = null,
+        ?string $tipoOrigen = null,
+        ?string $detalleOrigen = null,
+        ?string $observacion = null
+    ): void
     {
         $stock = DB::table('stock')
             ->where('idsucursal', $idsucursal)
@@ -869,6 +979,21 @@ class NotaCreditoVController extends Controller
             ->where('iddeposito', $iddeposito)
             ->where('idproducto', $idproducto)
             ->decrement('cantidad', $cantidad);
+
+        if ($idOrigen !== null && $tipoOrigen !== null) {
+            app(MovimientoStockService::class)->registrar(
+                $idproducto,
+                $idsucursal,
+                $iddeposito,
+                $tipoOrigen,
+                $idOrigen,
+                $detalleOrigen,
+                'SALIDA',
+                $cantidad,
+                null,
+                $observacion
+            );
+        }
     }
 
     private function datosComprobante(int $id): array
@@ -880,6 +1005,7 @@ class NotaCreditoVController extends Controller
             ->leftJoin('ventas as v', 'c.idventa', '=', 'v.idventa')
             ->select(
                 'c.idnota_creditov',
+                'c.nro_nota_credito',
                 'c.idventa',
                 'c.usuario',
                 's.idsucursal',
@@ -902,6 +1028,9 @@ class NotaCreditoVController extends Controller
                 'c.nro_factura',
                 'c.estado',
                 'c.fecha_factura',
+                'c.hash_documento',
+                'c.hash_anulacion',
+                'c.hash_version',
                 'v.nro_factura as factura_afectada'
             )
             ->where('c.idnota_creditov', '=', $id)
@@ -930,6 +1059,28 @@ class NotaCreditoVController extends Controller
             ->get();
 
         return [$nota_creditov, $detalles];
+    }
+
+    private function timbradoActivo(int $idsucursal): ?object
+    {
+        return DB::table('timbrado')
+            ->where('idsucursal', $idsucursal)
+            ->where('estado', 'Activo')
+            ->whereDate('fecha_vencimiento', '>=', now()->toDateString())
+            ->orderByDesc('idtimbrado')
+            ->first();
+    }
+
+    private function generarNumeroNota(int $idnota, ?string $serie): string
+    {
+        $serie = $serie ?: '001-001';
+
+        return $serie . '-' . str_pad((string) $idnota, 7, '0', STR_PAD_LEFT);
+    }
+
+    private function proximoIdTabla(string $tabla, string $pk): int
+    {
+        return ((int) DB::table($tabla)->max($pk)) + 1;
     }
 
     private function pagadoRealVenta(int $idventa): int

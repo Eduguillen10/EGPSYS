@@ -6,6 +6,7 @@ use App\Models\Cobro;
 use App\Models\CobroDetalle;
 use App\Models\FormaCobroDetalle;
 use App\Models\Ventas;
+use App\Services\LegalDocumentHashService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,8 +35,13 @@ class CobroController extends Controller
             ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
             ->leftJoin('det_cobro as dc', 'c.id_cobro', '=', 'dc.id_cobro')
+            ->leftJoin('ventas as v', 'dc.idventa', '=', 'v.idventa')
             ->leftJoin('cuenta_cobrar as cc', 'dc.idventa', '=', 'cc.idventa')
             ->leftJoin('nota_credito_venta_cobro as ncc', 'c.id_cobro', '=', 'ncc.id_cobro')
+            ->leftJoin('venta_credito_aceptaciones as vca', function ($join) {
+                $join->on('vca.idventa', '=', 'v.idventa')
+                    ->where('vca.estado', '=', 'Aceptado');
+            })
             ->select(
                 'c.id_cobro',
                 'c.fecha_cobro',
@@ -47,6 +53,7 @@ class CobroController extends Controller
                 'cli.nombre as cliente',
                 'cli.num_documento',
                 DB::raw('MIN(dc.idventa) as idventa'),
+                DB::raw("MAX(CASE WHEN LOWER(TRIM(COALESCE(v.condicion, ''))) <> 'contado' AND v.idventa IS NOT NULL AND vca.idaceptacion_credito IS NULL THEN 1 ELSE 0 END) as credito_pendiente_aceptacion"),
                 DB::raw('MAX(cc.saldo) as saldo_cuenta'),
                 DB::raw('MAX(cc.fecha_vencimiento) as fecha_vencimiento_cuenta')
             )
@@ -97,6 +104,12 @@ class CobroController extends Controller
 
         if (in_array($venta->estado, ['Cancelado', 'Anulado'])) {
             return redirect()->back()->with('error', 'La venta está anulada/cancelada.');
+        }
+
+        if ($this->ventaCreditoSinAceptar((int) $venta->idventa)) {
+            return redirect()
+                ->route('venta.show', $venta->idventa)
+                ->with('error', 'Antes de cobrar una venta a credito debe registrar la firma fisica del compromiso de pago.');
         }
 
         $user = Auth::user();
@@ -203,6 +216,14 @@ class CobroController extends Controller
             ->orderBy('d.items')
             ->get();
 
+        foreach ($cobrodetalle as $detalle) {
+            if ($this->ventaCreditoSinAceptar((int) $detalle->idventa)) {
+                return redirect()
+                    ->route('venta.show', $detalle->idventa)
+                    ->with('error', 'Este cobro corresponde a una venta a credito sin firma fisica registrada.');
+            }
+        }
+
         $forma_cobro = DB::table('formacobro')
             ->select('id_formacobro', 'descripcion', 'requiere_banco', 'requiere_documento', 'requiere_vencimiento')
             ->orderBy('id_formacobro')
@@ -270,6 +291,11 @@ class CobroController extends Controller
             }
 
             // condición (si hay alguna venta CONTADO => NO parcial)
+            if ($this->cobroTieneCreditoSinAceptar((int) $id_cobro)) {
+                DB::rollBack();
+                return back()->with('error', 'No se puede finalizar el cobro: existe una venta a credito sin respaldo de firma fisica.');
+            }
+
             $condiciones = DB::table('det_cobro as dc')
                 ->join('ventas as v', 'dc.idventa', '=', 'v.idventa')
                 ->where('dc.id_cobro', $id_cobro)
@@ -423,6 +449,12 @@ class CobroController extends Controller
 
             $this->recalcularCuentaCobrarPorCobro((int) $id_cobro);
 
+            $hashService = app(LegalDocumentHashService::class);
+            $cobro->forceFill([
+                'hash_documento' => $hashService->hashCobro((int) $id_cobro),
+                'hash_version' => LegalDocumentHashService::VERSION,
+            ])->save();
+
             DB::commit();
             return redirect()->route('cobro.show', $id_cobro)->with('success', 'Cobro finalizado correctamente.');
         } catch (\Throwable $e) {
@@ -451,6 +483,9 @@ class CobroController extends Controller
                 'c.monto_cobro',
                 'c.cobro_estado',
                 'c.usuario',
+                'c.hash_documento',
+                'c.hash_anulacion',
+                'c.hash_version',
                 's.descripcion as sucursal',
                 'cli.nombre as cliente',
                 'cli.num_documento',
@@ -490,8 +525,10 @@ class CobroController extends Controller
             ->get();
 
         $totalPagado = (int) DB::table('det_formacobro')->where('id_cobro', $id)->sum('monto_detformacobro');
+        $hashService = app(LegalDocumentHashService::class);
+        $hashValido = $hashService->verificar($cobros->hash_documento ?? null, $hashService->hashCobro((int) $id));
 
-        return view('ventas.cobro.show', compact('cobros', 'cobrodetalle', 'formacobrodetalle', 'totalPagado'));
+        return view('ventas.cobro.show', compact('cobros', 'cobrodetalle', 'formacobrodetalle', 'totalPagado', 'hashValido'));
     }
 
     public function imprimirRecibo($id)
@@ -513,6 +550,9 @@ class CobroController extends Controller
                 'c.monto_cobro',
                 'c.cobro_estado',
                 'c.usuario',
+                'c.hash_documento',
+                'c.hash_anulacion',
+                'c.hash_version',
                 's.descripcion as sucursal',
                 'cli.nombre as cliente',
                 'cli.num_documento',
@@ -571,12 +611,15 @@ class CobroController extends Controller
         $totalPagado = (int) DB::table('det_formacobro')
             ->where('id_cobro', $id)
             ->sum('monto_detformacobro');
+        $hashService = app(LegalDocumentHashService::class);
+        $hashValido = $hashService->verificar($cobros->hash_documento ?? null, $hashService->hashCobro((int) $id));
 
         return view('ventas.cobro.recibo', compact(
             'cobros',
             'cobrodetalle',
             'formacobrodetalle',
-            'totalPagado'
+            'totalPagado',
+            'hashValido'
         ));
     }
     public function destroy($id)
@@ -605,6 +648,8 @@ class CobroController extends Controller
 
             $cobro->cobro_estado = 'Anulado';
             $cobro->usuario = Auth::user()->name;
+            $cobro->hash_anulacion = app(LegalDocumentHashService::class)
+                ->hashAnulacion('COBRO', (int) $cobro->id_cobro, request('motivo_anulacion'), Auth::user()->name ?? null);
             $cobro->save();
 
             $this->recalcularCuentaCobrarPorCobro((int) $id);
@@ -901,5 +946,30 @@ class CobroController extends Controller
         }
 
         return null;
+    }
+
+    private function ventaCreditoSinAceptar(int $idventa): bool
+    {
+        $venta = DB::table('ventas')
+            ->where('idventa', $idventa)
+            ->select('condicion')
+            ->first();
+
+        if (! $venta || mb_strtolower(trim((string) $venta->condicion)) === 'contado') {
+            return false;
+        }
+
+        return ! DB::table('venta_credito_aceptaciones')
+            ->where('idventa', $idventa)
+            ->where('estado', 'Aceptado')
+            ->exists();
+    }
+
+    private function cobroTieneCreditoSinAceptar(int $idCobro): bool
+    {
+        return DB::table('det_cobro')
+            ->where('id_cobro', $idCobro)
+            ->pluck('idventa')
+            ->contains(fn ($idventa) => $this->ventaCreditoSinAceptar((int) $idventa));
     }
 }

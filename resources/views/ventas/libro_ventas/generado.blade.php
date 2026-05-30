@@ -4,6 +4,7 @@
 <div class="row">
 	<div class="text-center col-log-12 col-md-12 col-sm-12 col-xs-12">
 		<h3>Libro de Ventas</h3>
+		<button class="btn btn-primary no-print" onclick="window.print()" style="margin-bottom: 12px;">Imprimir</button>
 	</div>
 </div>
 <div class="row">

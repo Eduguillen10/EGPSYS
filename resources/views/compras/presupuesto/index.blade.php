@@ -6,6 +6,12 @@
 			<a href="presupuesto/create"><button class="btn btn-success">Nuevo</button></a>
 			<span>Total de Registros: {{ $total }}</span>
 		</h3>
+		@if (session('success'))
+			<div class="alert alert-success">{{ session('success') }}</div>
+		@endif
+		@if (session('error'))
+			<div class="alert alert-danger">{{ session('error') }}</div>
+		@endif
 		@include('compras/presupuesto.search')
 	</div>
 </div>
@@ -23,7 +29,7 @@
 					<th>RUC</th>
 					<th>Pedido</th> 
 					<th>Observacion</th>
-					<th>Total</th>
+					<th>Monto</th>
 					<th>Estado</th>
 					<th>Opciones</th>  
 				</thead>
@@ -37,17 +43,19 @@
 					<td>{{ $pre->ruc}}</td> 
 					<td>{{ $pre->idpedidocompra}}</td>
 					<td>{{ $pre->observacion}}</td> 					
-					<td>{{ $pre->totalpresupuesto_compra}}</td> 
+					<td>{{ $pre->montopresupuesto_compra}}</td> 
 					<td>{{ $pre->estado }}</td> 
 					<td>
-						<a href="{{URL('compras/presupuesto/'.$pre->idpresupuestocompra.'show')}}"><button class="btn btn-primary">Detalles</button></a>
-						<a href="" data-target="#modal-delete-{{$pre->idpresupuestocompra}}" data-toggle="modal"><button class="btn btn-danger">Eliminar</button></a>
+						<a href="{{ route('presupuesto.show', $pre->idpresupuestocompra) }}"><button class="btn btn-primary">Detalles</button></a>
+						@if ($pre->estado !== 'Cancelado')
+							<a href="" data-target="#modal-delete-{{$pre->idpresupuestocompra}}" data-toggle="modal"><button class="btn btn-danger">Anular</button></a>
+						@endif
 					</td>
 				</tr>
 				@include('compras.presupuesto.modal') @endforeach
 			</table>
 		</div>
-		{{$presupuestos_compras->appends(Request::only(['searchText']))->render()}} 
+		{{$presupuestos_compras->appends(Request::only(['searchText', 'searchText2', 'searchText3', 'searchText4', 'searchText5', 'searchText6', 'searchText7']))->render()}} 
 	</div>
 </div>
 
