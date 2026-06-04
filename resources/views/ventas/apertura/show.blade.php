@@ -56,7 +56,7 @@
 					<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
 						<div class="form-group">
 							<label for="usuario">Usuario</label>
-							<input type="text" name="usuario" class="form-control" value="{{ $apertura->usuario }}" readonly>
+							<input type="text" class="form-control" value="{{ $apertura->usuario }}" readonly>
 						</div>
 					</div>
 				</div><!-- fin row -->

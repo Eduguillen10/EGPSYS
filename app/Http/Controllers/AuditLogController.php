@@ -36,8 +36,8 @@ class AuditLogController extends Controller
             $query->where('auditable_type', $request->get('modelo'));
         }
 
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->get('user_id'));
+        if ($request->filled('idusuario')) {
+            $query->where('idusuario', $request->get('idusuario'));
         }
 
         if ($request->filled('registro')) {
@@ -52,7 +52,7 @@ class AuditLogController extends Controller
 
         return view('acceso.auditoria.index', [
             'auditorias' => $auditorias,
-            'filtros' => $request->only(['desde', 'hasta', 'evento', 'modelo', 'user_id', 'registro', 'ip']),
+            'filtros' => $request->only(['desde', 'hasta', 'evento', 'modelo', 'idusuario', 'registro', 'ip']),
             'eventos' => $this->eventos(),
             'modelos' => $this->modelos(),
             'usuarios' => User::orderBy('name')->get(['id', 'name', 'email']),

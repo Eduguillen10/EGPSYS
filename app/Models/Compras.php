@@ -19,6 +19,7 @@ class Compras extends Model
     protected $fillable=[
         'idordencompra',
         'idsucursal',
+        'idusuario',
         'iddeposito',
         'idproveedor',
         'ruc',        
@@ -29,13 +30,12 @@ class Compras extends Model
         'fecha_vencimiento',
         'concepto',        
         'estado',
-        'usuario',
-        'totaliva10',
-        'totaliva5',
-        'totalgravada10',
-        'totalgravada5',
-        'totalexenta',
-        'totalcompra',
+        'montoiva10',
+        'montoiva5',
+        'montogravada10',
+        'montogravada5',
+        'montoexenta',
+        'montocompra',
         'timbrado',
     ];
 }

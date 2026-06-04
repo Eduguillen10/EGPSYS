@@ -6,72 +6,44 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class AjusteFormRequest extends FormRequest
 {
-    /**
-     * Determina si el usuario está autorizado para hacer esta petición.
-     */
     public function authorize(): bool
     {
-        return true; // Cambia a `false` si quieres restringir el acceso
+        return true;
     }
 
-    /**
-     * Reglas de validación para ajustes de productos y sus detalles.
-     */
     public function rules(): array
     {
         return [
-            // Validaciones para la tabla "ajustes_productos"
             'idsucursal' => 'required|integer|exists:sucursales,idsucursal',
             'iddeposito' => 'required|integer|exists:depositos,iddeposito',
             'fecha' => 'required|date',
-            'tipoajuste' => 'required|string|in:Entrada,Salida',
-            'idmotivo' => 'required|integer|exists:motivos,idmotivo',
-            'usuario' => 'required|string|max:100',
-
-            // Validaciones para la tabla "ajustes_productos_detalle"
-            'detalles' => 'required|array|min:1',
-            'detalles.*.idproducto' => 'required|integer|exists:productos,idproducto',
-            'detalles.*.items' => 'required|integer|min:1',
-            'detalles.*.cantidad' => 'required|integer|min:1',
+            'idtipo_ajuste' => 'required|integer|exists:tipo_ajuste,idtipo_ajuste',
+            'idmotivo' => 'required|integer|exists:motivo,idmotivo',
+            'observacion' => 'nullable|string|max:255',
+            'idproducto' => 'required|array|min:1',
+            'idproducto.*' => 'required|integer|exists:productos,idproducto',
+            'cantidad' => 'required|array|min:1',
+            'cantidad.*' => 'required|numeric|min:0.001',
         ];
     }
 
-    /**
-     * Mensajes de error personalizados.
-     */
     public function messages(): array
     {
         return [
-            'idsucursal.required' => 'El campo sucursal es obligatorio.',
-            'idsucursal.exists' => 'La sucursal seleccionada no existe.',
-
-            'iddeposito.required' => 'El campo depósito es obligatorio.',
-            'iddeposito.exists' => 'El depósito seleccionado no existe.',
-
+            'idsucursal.required' => 'La sucursal es obligatoria.',
+            'iddeposito.required' => 'Debe seleccionar un deposito.',
+            'iddeposito.exists' => 'El deposito seleccionado no existe.',
             'fecha.required' => 'La fecha es obligatoria.',
-            'fecha.date' => 'Debe ser una fecha válida.',
-
-            'tipoajuste.required' => 'El tipo de ajuste es obligatorio.',
-            'tipoajuste.in' => 'El tipo de ajuste debe ser "Entrada" o "Salida".',
-
-            'idmotivo.required' => 'El motivo del ajuste es obligatorio.',
-            'idmotivo.exists' => 'El motivo seleccionado no es válido.',
-
-            'usuario.required' => 'El usuario es obligatorio.',
-            'usuario.max' => 'El usuario no puede superar los 100 caracteres.',
-
-            'detalles.required' => 'Debe haber al menos un detalle en el ajuste.',
-            'detalles.array' => 'Los detalles deben ser un arreglo válido.',
-
-            'detalles.*.idproducto.required' => 'Cada detalle debe tener un producto.',
-            'detalles.*.idproducto.exists' => 'El producto seleccionado no existe.',
-
-            'detalles.*.items.required' => 'Cada detalle debe indicar el número de ítems.',
-            'detalles.*.items.min' => 'El número de ítems debe ser al menos 1.',
-
-            'detalles.*.cantidad.required' => 'Cada detalle debe indicar la cantidad.',
-            'detalles.*.cantidad.min' => 'La cantidad debe ser al menos 1.',
+            'fecha.date' => 'La fecha no tiene un formato valido.',
+            'idtipo_ajuste.required' => 'Debe seleccionar el tipo de ajuste.',
+            'idtipo_ajuste.exists' => 'El tipo de ajuste seleccionado no existe.',
+            'idmotivo.required' => 'Debe seleccionar el motivo del ajuste.',
+            'idmotivo.exists' => 'El motivo seleccionado no existe.',
+            'idproducto.required' => 'Debe agregar al menos un producto.',
+            'idproducto.*.exists' => 'Uno de los productos seleccionados no existe.',
+            'cantidad.*.required' => 'Debe ingresar la cantidad de cada producto.',
+            'cantidad.*.numeric' => 'La cantidad debe ser numerica.',
+            'cantidad.*.min' => 'La cantidad debe ser mayor a cero.',
         ];
     }
 }
-

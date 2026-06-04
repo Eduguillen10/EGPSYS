@@ -38,6 +38,7 @@ class PresupuestosComprasController extends Controller
         $queryBuilder = DB::table('presupuestos_compras as pc')
                             ->join('sucursales as s', 'pc.idsucursal', '=', 's.idsucursal')
                             ->join('proveedores as p', 'pc.idproveedor', '=', 'p.idproveedor')
+                            ->join('users as u', 'pc.idusuario', '=', 'u.id')
                             ->leftJoin('pedidos_compras as pedido', 'pc.idpedidocompra', '=', 'pedido.idpedidocompra')
                             ->select(
                                 'pc.idpresupuestocompra', 
@@ -56,7 +57,7 @@ class PresupuestosComprasController extends Controller
                                 'pc.montoexenta',
                                 'pc.montopresupuesto_compra',
                                 'pc.observacion',
-                                'pc.usuario',
+                                'u.name as usuario',
                                 'pc.estado'
                             );
         // Aplicar condiciones WHERE según los términos de búsqueda
@@ -106,7 +107,7 @@ class PresupuestosComprasController extends Controller
             'pc.montoexenta',
             'pc.montopresupuesto_compra',
             'pc.observacion',
-            'pc.usuario',
+            'u.name',
             'pc.estado'
         )
         ->paginate(7); // Paginar directamente
@@ -126,38 +127,6 @@ class PresupuestosComprasController extends Controller
             // ... etc para otros searchText
             "total" => $total
         ]);
-/* 
-        var_dump($query);
-        var_dump($query2);
-        var_dump($query3);
-        var_dump($query4);
-        var_dump($query5);
-        var_dump($query6);
-        var_dump($query7);
-*/
-/* 
-        $presupuestos = DB::table('presupuestos_compras as pc')
-        ->join('sucursales as s', 's.idsucursal', '=', 'pc.idsucursal')
-        ->join('proveedores as p', 'pc.idproveedor', '=', 'p.idproveedor')
-        ->leftJoin('pedidos_compras as pedido', 'pc.idpedidocompra', '=', 'pedido.idpedidocompra') //para estirar la obs del pedido
-        ->select('pc.idpresupuestocompra', 's.idsucursal','s.descripcion', 'p.idproveedor','p.razonsocial', 'p.ruc', 'pc.idpedidocompra', 'pc.fecha', 'pc.fechavalidez', 'pc.montoiva10', 'pc.montoiva5', 'pc.montogravada10', 'pc.montogravada5', 'pc.montoexenta','pc.montopresupuesto_compra','pc.observacion','pc.usuario','pc.estado')
-        
-        ->where('pc.idpresupuestocompra', 'LIKE', '%'.$query.'%')
-        ->where('pc.fecha', 'LIKE', '%'.$query2.'%')
-        ->where('p.razonsocial', 'LIKE', '%'.$query4.'%')
-        ->where('s.descripcion', 'LIKE', '%'.$query3.'%')
-        ->where('pc.idpedidocompra', 'LIKE', '%'.$query5.'%')
-        ->where('p.ruc', 'LIKE', '%'.$query6.'%')
-        ->where('pc.estado', 'LIKE', '%'.$query7.'%')
-        ->whereNull('pc.idpedidocompra')
-
-        ->orderBy('pc.idpresupuestocompra', 'desc')
-        ->groupBy('pc.idpresupuestocompra', 's.idsucursal','s.descripcion', 'p.idproveedor', 'p.razonsocial', 'p.ruc', 'pc.idpedidocompra', 'pc.fecha', 'pc.fechavalidez', 'pc.montoiva10', 'pc.montoiva5', 'pc.montogravada10', 'pc.montogravada5', 'pc.montoexenta','pc.montopresupuesto_compra','pc.observacion','pc.usuario','pc.estado')
-        
-        ->paginate(10);
-
-           return view('compras.presupuesto.index',["presupuestos"=>$presupuestos,"searchText"=>$query,"searchText2"=>$query2,"searchText3"=>$query3,"searchText4"=>$query4,"searchText5"=>$query5,"searchText6"=>$query6,"searchText7"=>$query7]);
-*/
 }
 
 public function create()
@@ -175,6 +144,8 @@ public function create()
     ->select('prod.descripcion AS productos','prod.idproducto','m.descripcion AS marcas')
     ->get();
     $pedidos=DB:: table('pedidos_compras as pc')
+    ->join('users as u', 'pc.idusuario', '=', 'u.id')
+    ->select('pc.*', 'u.name as usuario')
     ->where('idsucursal', '=', $suc)
     ->where('estado', '=', 'Pendiente')
     ->get();
@@ -210,9 +181,9 @@ public function store (PresupuestosComprasFormRequest $request)
             $presupuesto=new PresupuestosCompras;
             $presupuesto->idproveedor=$request->get('idproveedor');
             $presupuesto->idsucursal=$usuario->trabaja_sucursal;                
+            $presupuesto->idusuario=$usuario->id;
             $presupuesto->idpedidocompra=$request->get('idpedidocompra');
             $presupuesto->observacion=$request->get('observacion');
-            $presupuesto->usuario=$usuario->name;
             $presupuesto->montoiva10=$request->get('montoiva10');
             $presupuesto->montoiva5=$request->get('montoiva5');
             $presupuesto->montogravada10=$request->get('montogravada10');
@@ -379,8 +350,9 @@ public function show($id)
     $presupuesto=DB::table('presupuestos_compras as pc')
         ->join('sucursales as s', 'pc.idsucursal', '=', 's.idsucursal')
         ->join('proveedores as p', 'pc.idproveedor', '=', 'p.idproveedor')
+        ->join('users as u', 'pc.idusuario', '=', 'u.id')
         ->leftJoin('pedidos_compras as pedido', 'pc.idpedidocompra', '=', 'pedido.idpedidocompra') //para estirar la obs del pedido
-        ->select('pc.idpresupuestocompra', 's.idsucursal','s.descripcion', 'p.idproveedor','p.razonsocial', 'p.ruc', 'pc.idpedidocompra', 'pc.fecha','pc.fechavalidez','pedido.observacion as observacion_pedido','pc.usuario')
+        ->select('pc.idpresupuestocompra', 's.idsucursal','s.descripcion', 'p.idproveedor','p.razonsocial', 'p.ruc', 'pc.idpedidocompra', 'pc.fecha','pc.fechavalidez','pedido.observacion as observacion_pedido','u.name as usuario')
        ->where('pc.idpresupuestocompra','=',$id)
        ->orderBy('pc.idpresupuestocompra','desc')           
        ->first();
@@ -448,7 +420,7 @@ public function show($id)
 
             //return dd($idpedidocompra,$proveedores);
 
-            $user = Auth::user()->name;
+            $userId = Auth::id();
             $suc = Auth::user()->trabaja_sucursal;
 
             // Insertar cabecera del presupuesto
@@ -456,7 +428,7 @@ public function show($id)
                 'idpedidocompra' => $pedidos->idpedidocompra,
                 'idproveedor' => $proveedores->idproveedor,
                 'idsucursal' => $suc,
-                'usuario' => $user,
+                'idusuario' => $userId,
                 'observacion' => $pedidos->observacion,
                 'fecha' => now(),
                 'fechavalidez' => $fechavalidez,
@@ -495,7 +467,8 @@ public function show($id)
 {
     $presupuesto = PresupuestosCompras::join('sucursales as s', 'presupuestos_compras.idsucursal', '=', 's.idsucursal')
         ->join('proveedores as p', 'presupuestos_compras.idproveedor', '=', 'p.idproveedor')
-        ->select('presupuestos_compras.idpresupuestocompra', 's.idsucursal', 's.descripcion', 'p.idproveedor', 'p.razonsocial', 'p.ruc', 'presupuestos_compras.idpedidocompra', 'presupuestos_compras.fecha', 'presupuestos_compras.observacion', 'presupuestos_compras.estado', 'presupuestos_compras.fechavalidez', 'presupuestos_compras.usuario')
+        ->join('users as u', 'presupuestos_compras.idusuario', '=', 'u.id')
+        ->select('presupuestos_compras.idpresupuestocompra', 's.idsucursal', 's.descripcion', 'p.idproveedor', 'p.razonsocial', 'p.ruc', 'presupuestos_compras.idpedidocompra', 'presupuestos_compras.fecha', 'presupuestos_compras.observacion', 'presupuestos_compras.estado', 'presupuestos_compras.fechavalidez', 'u.name as usuario')
         ->where('presupuestos_compras.idpresupuestocompra', '=', $id)
         ->orderBy('presupuestos_compras.idpresupuestocompra', 'desc')
         ->first();

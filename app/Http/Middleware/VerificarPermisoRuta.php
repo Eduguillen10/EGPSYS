@@ -22,6 +22,9 @@ class VerificarPermisoRuta
 
     private array $prefijos = [
         'compras.compra' => 'compra',
+        'nota_creditoc' => 'compra',
+        'nota_debitoc' => 'compra',
+        'nota_remision_compra' => 'compra',
         'login_attempts' => 'intentos_acceso',
         'audit_logs' => 'audit_trail',
         'referenciales.estados' => 'estados_referenciales',

@@ -97,7 +97,7 @@ class VentanaController extends Controller
         $ahora = now();
         $permisos = Accion::all()->map(function ($accion) use ($user, $ventana, $ahora) {
             return [
-                'user_id' => $user->id,
+                'idusuario' => $user->id,
                 'idventana' => $ventana->idventana,
                 'idaccion' => $accion->idaccion,
                 'created_at' => $ahora,

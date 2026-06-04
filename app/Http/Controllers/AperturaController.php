@@ -22,12 +22,12 @@ class AperturaController extends Controller
         $apertura = DB::table('apertura as a')
             ->join('cajas as c', 'a.idcaja', '=', 'c.idcaja')
             ->join('sucursales as s', 'a.idsucursal', '=', 's.idsucursal')
-            ->join('users as u', 'a.id', '=', 'u.id')
+            ->join('users as u', 'a.idusuario', '=', 'u.id')
             ->select(
                 'a.idapertura',
                 'c.descripcion as caja',
                 's.descripcion as sucursal',
-                'a.usuario',
+                'u.name as usuario',
                 'a.fecha_apertura',
                 'a.monto_inicial',
                 'a.fecha_cierre',
@@ -51,12 +51,12 @@ class AperturaController extends Controller
         $apertura = DB::table('apertura as a')
             ->join('cajas as c', 'a.idcaja', '=', 'c.idcaja')
             ->join('sucursales as s', 'a.idsucursal', '=', 's.idsucursal')
-            ->join('users as u', 'a.id', '=', 'u.id')
+            ->join('users as u', 'a.idusuario', '=', 'u.id')
             ->select(
                 'a.idapertura',
                 'c.descripcion as caja',
                 's.descripcion as sucursal',
-                'a.usuario',
+                'u.name as usuario',
                 'a.fecha_apertura',
                 'a.monto_inicial',
                 'a.fecha_cierre',
@@ -65,7 +65,7 @@ class AperturaController extends Controller
             )
             ->where('a.idapertura', 'LIKE', '%' . $query1 . '%')
             ->where('c.descripcion', 'LIKE', '%' . $query2 . '%')
-            ->where('a.usuario', 'LIKE', '%' . $query3 . '%')
+            ->where('u.name', 'LIKE', '%' . $query3 . '%')
             ->where('a.fecha_apertura', 'LIKE', '%' . $query4 . '%')
             ->where('a.monto_inicial', 'LIKE', '%' . $query5 . '%')
             ->orderBy('a.idapertura', 'desc')
@@ -104,7 +104,7 @@ class AperturaController extends Controller
     public function storeApertura(AperturaFormRequest $request)
     {
         // Validar si el usuario tiene alguna caja abierta
-        $cajaAbierta = Apertura::where('id', Auth::user()->id)
+        $cajaAbierta = Apertura::where('idusuario', Auth::user()->id)
             ->where('estado', 'Abierto')
             ->first();
 
@@ -131,8 +131,7 @@ class AperturaController extends Controller
         $apertura->monto_inicial = $request->get('monto_inicial');
         $apertura->fecha_apertura = $request->get('fecha_apertura');
         $apertura->estado = 'Abierto';
-        $apertura->id = Auth::user()->id;
-        $apertura->usuario = Auth::user()->name;
+        $apertura->idusuario = Auth::user()->id;
         $apertura->idtipoarqueo = $idTipoParcial; // si tu columna es nullable, no pasa nada
 
         $apertura->save();
@@ -191,7 +190,24 @@ class AperturaController extends Controller
 
     public function show($id)
     {
-        return view("ventas.apertura.show", ["apertura" => Apertura::findOrFail($id)]);
+        $apertura = DB::table('apertura as a')
+            ->join('cajas as c', 'a.idcaja', '=', 'c.idcaja')
+            ->join('sucursales as s', 'a.idsucursal', '=', 's.idsucursal')
+            ->join('users as u', 'a.idusuario', '=', 'u.id')
+            ->select(
+                'a.*',
+                'c.descripcion as caja',
+                's.descripcion as sucursal',
+                'u.name as usuario'
+            )
+            ->where('a.idapertura', $id)
+            ->first();
+
+        if (! $apertura) {
+            abort(404, 'Apertura no encontrada.');
+        }
+
+        return view("ventas.apertura.show", ["apertura" => $apertura]);
     }
 
     // =========================
@@ -223,11 +239,12 @@ class AperturaController extends Controller
         $datosArqueo = DB::table('apertura as a')
             ->join('cajas as c', 'a.idcaja', '=', 'c.idcaja')
             ->join('sucursales as s', 'a.idsucursal', '=', 's.idsucursal')
+            ->join('users as u', 'a.idusuario', '=', 'u.id')
             ->select(
                 'a.idapertura',
                 'c.descripcion as caja',
                 's.descripcion as sucursal',
-                'a.usuario',
+                'u.name as usuario',
                 'a.monto_inicial',
                 'a.monto_cierre',
                 'a.fecha_apertura',
@@ -296,10 +313,11 @@ class AperturaController extends Controller
             ->leftJoin('formacobro as fc', 'dfc.id_formacobro', '=', 'fc.id_formacobro')
             ->leftJoin('det_cobro as dc', 'c.id_cobro', '=', 'dc.id_cobro')
             ->leftJoin('ventas as v', 'dc.idventa', '=', 'v.idventa')
+            ->leftJoin('users as u', 'c.idusuario', '=', 'u.id')
             ->select(
                 'c.id_cobro',
                 'c.fecha_cobro',
-                'c.usuario',
+                'u.name as usuario',
                 'c.idcliente',
                 'fc.descripcion as formacobro',
                 'dfc.documento',

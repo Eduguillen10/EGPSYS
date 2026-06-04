@@ -22,8 +22,8 @@ class CajasController extends Controller
         {
             $query = trim($request->get('searchText'));
             $cajas = DB::table('cajas as c')
-                ->join('users as u', 'c.id', '=', 'u.id')
-                ->select('c.idcaja','c.descripcion','c.estado','c.id','u.name as usuario')
+                ->join('users as u', 'c.idusuario', '=', 'u.id')
+                ->select('c.idcaja','c.descripcion','c.estado','c.idusuario','u.name as usuario')
                 ->where('c.descripcion', 'LIKE', '%' . $query . '%')
                 ->where('c.estado', '=', 'Activo')
                 ->orWhere('c.estado','=', 'Inactivo')
@@ -42,7 +42,7 @@ class CajasController extends Controller
     {
         $caja = new Cajas;
         $caja->descripcion = $request->get('descripcion');
-        $caja->id = Auth::check() ? Auth::id() : null;  // Obtiene el ID del usuario autenticado // Verifica si hay usuario autenticado
+        $caja->idusuario = Auth::id();
         $caja->estado = 'Activo'; // Estado por defecto
         $caja->save();
         
@@ -76,4 +76,3 @@ class CajasController extends Controller
         return Redirect::to('referenciales/cajas')->with('success', 'Caja desactivada correctamente.');
     }
 }
-

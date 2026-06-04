@@ -17,7 +17,7 @@ class TwoFactorController extends Controller
 
     public function show(Request $request)
     {
-        if (! $request->session()->has('two_factor.user_id')) {
+        if (! $request->session()->has('two_factor.idusuario')) {
             return redirect()->route('login');
         }
 
@@ -110,7 +110,7 @@ class TwoFactorController extends Controller
 
     private function pendingUser(Request $request): ?User
     {
-        $userId = $request->session()->get('two_factor.user_id');
+        $userId = $request->session()->get('two_factor.idusuario');
 
         if (! $userId) {
             return null;
@@ -128,7 +128,7 @@ class TwoFactorController extends Controller
     {
         try {
             LoginAttempt::create([
-                'user_id' => $user->id,
+                'idusuario' => $user->id,
                 'email' => $user->email,
                 'password_mask' => null,
                 'successful' => $successful,

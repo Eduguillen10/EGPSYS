@@ -41,7 +41,7 @@ class AuditTrailObserver
             'event' => $event,
             'auditable_type' => $model::class,
             'auditable_id' => $model->getKey(),
-            'user_id' => Auth::id(),
+            'idusuario' => Auth::id(),
             'old_values' => $oldValues,
             'new_values' => $newValues,
             'ip_address' => request()?->ip(),

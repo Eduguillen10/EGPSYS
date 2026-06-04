@@ -18,7 +18,6 @@ class CajasFormRequest extends FormRequest
     {
         return [
             'descripcion' => $this->descriptionRules('cajas', 'idcaja', 100),
-            'id' => 'required|integer|exists:users,id',
             'estado' => 'required|in:Activo,Inactivo',
         ];
     }

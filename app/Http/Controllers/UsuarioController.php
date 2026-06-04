@@ -103,8 +103,8 @@ class UsuarioController extends Controller
     public function verSeleccionarEmpresaSucursal()
 {
     // Aca se obtiene las empresas y sucursales disponibles desde la base de datos
-    $empresas = Empresa::all(); 
-    $sucursales = Sucursal::all(); 
+    $empresas = Empresas::all();
+    $sucursales = Sucursales::all();
 
     return view('seleccionsucursales.seleccionar.index', compact('empresas', 'sucursales'));
 
@@ -119,15 +119,12 @@ class UsuarioController extends Controller
         $usuario = User::find($idusuario);
 
         if ($idsucursal) {
-            // Asigna la empresa seleccionada al usuario
-            $usuario->empresas()->attach($idempresa, ['idsucursal' => $idsucursal]);
-
-           // Asigna la sucursal seleccionada al usuario
-            $usuario->sucursales()->attach($idsucursal, ['idempresa' => $idempresa]);
-
-            // Inserta en la tabla usuario_sucursal
-            UsuarioSucursal::create([
-                'id' => $idusuario,
+            UsuarioSucursal::updateOrCreate([
+                'idusuario' => $idusuario,
+                'idsucursal' => $idsucursal,
+                'idempresa' => $idempresa,
+            ], [
+                'idusuario' => $idusuario,
                 'idempresa' => $idempresa,
                 'idsucursal' => $idsucursal,
             ]);
@@ -169,7 +166,7 @@ class UsuarioController extends Controller
 
     private function sincronizarPermisos(User $usuario, array $permisos): void
     {
-        UsuarioPermiso::where('user_id', $usuario->id)->delete();
+        UsuarioPermiso::where('idusuario', $usuario->id)->delete();
 
         $registros = [];
         $ahora = now();
@@ -177,7 +174,7 @@ class UsuarioController extends Controller
         foreach ($permisos as $idventana => $acciones) {
             foreach (array_unique((array) $acciones) as $idaccion) {
                 $registros[] = [
-                    'user_id' => $usuario->id,
+                    'idusuario' => $usuario->id,
                     'idventana' => (int) $idventana,
                     'idaccion' => (int) $idaccion,
                     'created_at' => $ahora,

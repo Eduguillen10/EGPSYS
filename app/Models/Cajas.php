@@ -19,18 +19,18 @@ class Cajas extends Model
 
     protected $fillable = [
         'descripcion',
-        'id',
+        'idusuario',
         'estado',
     ];
 
     protected $casts = [
-        'id' => 'integer', // Convierte id a entero
+        'idusuario' => 'integer',
     ];
 
     // Relación con la tabla users (usuario que creó la caja)
     public function usuario()
     {
-        return $this->belongsTo(User::class, 'id');
+        return $this->belongsTo(User::class, 'idusuario');
     }
 
     // Scope para filtrar solo cajas activas

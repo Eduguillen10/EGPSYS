@@ -29,7 +29,6 @@ class NotaCreditoVRequest extends FormRequest
             'idcliente' => ['required', 'integer', 'exists:clientes,idcliente'],
             'num_documento' => ['required', 'string', 'max:15'],
             'idventa' => ['required', 'integer', 'exists:ventas,idventa'],
-            'usuario' => ['required', 'string', 'max:100'],
             'nro_factura' => ['required', 'string', 'max:50'],
             'timbrado' => ['required', 'string', 'max:10'],
             'concepto' => ['required', 'string', 'max:100'],

@@ -30,7 +30,7 @@ class NotaCreditoV extends Model
         'fecha_vencimiento',
         'concepto',        
         'estado',
-        'usuario',
+        'idusuario',
         'timbrado',
         'totaliva10',
         'totaliva5',

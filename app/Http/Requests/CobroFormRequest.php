@@ -30,7 +30,6 @@ class CobroFormRequest extends FormRequest
             'monto_cobro' => 'required',
             'idsucursal' => 'required',
             'idcliente' => 'required',
-            'usuario' => 'required',
             
         ];
     }

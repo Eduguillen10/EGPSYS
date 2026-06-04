@@ -104,7 +104,7 @@ trait HasAuditTrail
             'event' => 'ANULACION',
             'auditable_type' => static::class,
             'auditable_id' => $this->getKey(),
-            'user_id' => Auth::id(),
+            'idusuario' => Auth::id(),
             'old_values' => $this->auditCleanPayload($oldValues),
             'new_values' => $this->auditCleanPayload($newValues),
             'ip_address' => request()?->ip(),

@@ -133,7 +133,10 @@
                                 (object) ['id' => 'menu-compras-pedidos', 'label' => 'Pedidos de Compra', 'href' => url('/compras/pedido'), 'permission' => 'pedido', 'keywords' => 'Compras Pedidos de Compra /compras/pedido pedido'],
                                 (object) ['id' => 'menu-compras-presupuestos', 'label' => 'Presupuestos de Compras', 'href' => url('/compras/presupuesto'), 'permission' => 'presupuesto', 'keywords' => 'Compras Presupuestos de Compras /compras/presupuesto presupuesto'],
                                 (object) ['id' => 'menu-compras-orden', 'label' => 'Orden de Compras', 'href' => url('/compras/orden'), 'permission' => 'orden', 'keywords' => 'Compras Orden de Compras /compras/orden orden'],
+                                (object) ['id' => 'menu-compras-nota-remision', 'label' => 'Nota de Remision', 'href' => url('/compras/nota_remision'), 'permission' => 'compra', 'keywords' => 'Compras Nota de Remision /compras/nota_remision nota_remision remision traslado recepcion mercaderia'],
                                 (object) ['id' => 'menu-compras-compras', 'label' => 'Compras', 'href' => url('/compras/compra'), 'permission' => 'compra', 'keywords' => 'Compras /compras/compra compra'],
+                                (object) ['id' => 'menu-compras-nota-credito', 'label' => 'Nota de Credito', 'href' => url('/compras/nota_creditoc'), 'permission' => 'compra', 'keywords' => 'Compras Nota de Credito /compras/nota_creditoc nota_creditoc devolucion proveedor'],
+                                (object) ['id' => 'menu-compras-nota-debito', 'label' => 'Nota de Debito', 'href' => url('/compras/nota_debitoc'), 'permission' => 'compra', 'keywords' => 'Compras Nota de Debito /compras/nota_debitoc nota_debitoc recargo proveedor'],
                                 (object) ['id' => 'menu-compras-cuentas-pagar', 'label' => 'Cuentas a Pagar', 'href' => url('/compras/cuentas_pagar'), 'permission' => 'compra', 'keywords' => 'Compras Cuentas a Pagar /compras/cuentas_pagar cuentas_pagar proveedores deuda'],
                                 (object) ['id' => 'menu-compras-libro', 'label' => 'Libro Compras', 'href' => url('/compras/libro_compras'), 'permission' => 'compra', 'keywords' => 'Compras Libro Compras /compras/libro_compras libro_compras fiscal iva'],
                                 (object) ['id' => 'menu-compras-ajustes', 'label' => 'Ajustes', 'href' => url('/compras/ajuste'), 'permission' => 'ajuste', 'keywords' => 'Compras Ajustes /compras/ajuste ajuste'],
@@ -171,6 +174,7 @@
                                 (object) ['id' => 'menu-referenciales-clientes', 'label' => 'Clientes', 'href' => url('/referenciales/clientes'), 'permission' => 'clientes', 'keywords' => 'Referenciales Clientes /referenciales/clientes clientes'],
                                 (object) ['id' => 'menu-referenciales-proveedores', 'label' => 'Proveedores', 'href' => url('/referenciales/proveedores'), 'permission' => 'proveedores', 'keywords' => 'Referenciales Proveedores /referenciales/proveedores proveedores'],
                                 (object) ['id' => 'menu-referenciales-tipo-impuesto', 'label' => 'Tipo Impuesto', 'href' => url('/referenciales/tipo_impuesto'), 'permission' => 'tipo_impuesto', 'keywords' => 'Referenciales Tipo Impuesto /referenciales/tipo_impuesto tipo_impuesto'],
+                                (object) ['id' => 'menu-referenciales-tipo-ajuste', 'label' => 'Tipo Ajuste', 'href' => url('/referenciales/tipo_ajuste'), 'permission' => 'tipo_ajuste', 'keywords' => 'Referenciales Tipo Ajuste /referenciales/tipo_ajuste tipo_ajuste entrada salida stock ajuste'],
                                 (object) ['id' => 'menu-referenciales-cargos', 'label' => 'Cargos', 'href' => url('/referenciales/cargos'), 'permission' => 'cargos', 'keywords' => 'Referenciales Cargos /referenciales/cargos cargos'],
                                 (object) ['id' => 'menu-referenciales-empleados', 'label' => 'Empleados', 'href' => url('/referenciales/empleados'), 'permission' => 'empleados', 'keywords' => 'Referenciales Empleados /referenciales/empleados empleados'],
                                 (object) ['id' => 'menu-referenciales-tipos-documentos', 'label' => 'Tipo Documento', 'href' => url('/referenciales/tipos_documentos'), 'permission' => 'tipos_documentos', 'keywords' => 'Referenciales Tipo Documento /referenciales/tipos_documentos tipos_documentos'],
@@ -322,6 +326,12 @@
     $(function(){
         if ($.fn.selectpicker) {
             $('.selectpicker').selectpicker();
+        }
+
+        if ($(window).width() > 768 && $('#sidebar > ul').is(':visible')) {
+            $('#main-content').css('margin-left', '210px');
+            $('#sidebar').css('margin-left', '0');
+            $('#container').removeClass('sidebar-closed');
         }
 
         var menuItems = window.EGPSYS_MENU || [];

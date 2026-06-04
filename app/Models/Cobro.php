@@ -29,7 +29,7 @@ class Cobro extends Model
         'fecha_cobro',
         'monto_cobro',
         'cobro_estado',
-        'usuario',
+        'idusuario',
         'idsucursal',
         'idcliente',
         'idcaja',

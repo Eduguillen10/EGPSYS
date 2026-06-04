@@ -34,7 +34,8 @@ class PedidosComprasController extends Controller
         // Construir consulta SQL
         $queryBuilder = DB::table('pedidos_compras as p')
                             ->join('sucursales as s', 's.idsucursal', '=', 'p.idsucursal')
-                            ->select('p.idpedidocompra', 'p.fecha', 'p.observacion', 'p.estado', 'p.usuario', 'p.idsucursal', 's.descripcion as sucursal_descripcion');
+                            ->join('users as u', 'p.idusuario', '=', 'u.id')
+                            ->select('p.idpedidocompra', 'p.fecha', 'p.observacion', 'p.estado', 'u.name as usuario', 'p.idsucursal', 's.descripcion as sucursal_descripcion');
     
         // Aplicar condiciones WHERE según los términos de búsqueda
         if ($query) {
@@ -46,7 +47,7 @@ class PedidosComprasController extends Controller
         }
 
         if ($query6) {
-            $queryBuilder->where('p.usuario', 'LIKE', '%' . $query6 . '%');
+            $queryBuilder->where('u.name', 'LIKE', '%' . $query6 . '%');
         }
     
         if ($query3) {
@@ -110,7 +111,7 @@ class PedidosComprasController extends Controller
     
             $pedidos_compras = new PedidosCompras;
             $pedidos_compras->observacion = $request->get('observacion');
-            $pedidos_compras->usuario = $usuario->name;
+            $pedidos_compras->idusuario = $usuario->id;
             $pedidos_compras->idsucursal = $usuario->trabaja_sucursal;
             $mytime = Carbon::now('America/Asuncion');
             $pedidos_compras->fecha = $mytime->toDateTimeString();
@@ -157,7 +158,8 @@ class PedidosComprasController extends Controller
     {
         $pedidos_compras = DB::table('pedidos_compras as p')
             ->join('sucursales as s', 's.idsucursal', '=', 'p.idsucursal')
-            ->select('p.idpedidocompra', 'p.fecha', 'p.observacion', 'p.estado', 'p.usuario', 'p.idsucursal', 's.descripcion as sucursal_descripcion')
+            ->join('users as u', 'p.idusuario', '=', 'u.id')
+            ->select('p.idpedidocompra', 'p.fecha', 'p.observacion', 'p.estado', 'u.name as usuario', 'p.idsucursal', 's.descripcion as sucursal_descripcion')
             ->where('p.idpedidocompra', '=', $id)
             ->first();
     

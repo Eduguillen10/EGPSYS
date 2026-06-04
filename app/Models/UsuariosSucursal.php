@@ -18,7 +18,7 @@ class UsuarioSucursal extends Model
     public $timestamps = false;
 
     protected $fillable=[
-        'id',
+        'idusuario',
         'idsucursal',
         'idempresa'        
     ];

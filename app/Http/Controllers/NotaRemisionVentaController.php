@@ -53,9 +53,11 @@ class NotaRemisionVentaController extends Controller
             ->leftJoin('destinatarios_remision as dr', 'nr.iddestinatario_remision', '=', 'dr.iddestinatario_remision')
             ->leftJoin('depositos as dor', 'nr.iddeposito_origen', '=', 'dor.iddeposito')
             ->leftJoin('sucursales as so', 'dor.idsucursal', '=', 'so.idsucursal')
+            ->leftJoin('sucursales as sv', 'v.idsucursal', '=', 'sv.idsucursal')
             ->leftJoin('chofer as ch', 'nr.idchofer', '=', 'ch.idchofer')
             ->leftJoin('vehiculo as vh', 'nr.idvehiculo', '=', 'vh.idvehiculo')
             ->leftJoin('timbrado as trm', 'nr.idtimbrado', '=', 'trm.idtimbrado')
+            ->leftJoin('users as u', 'nr.idusuario', '=', 'u.id')
             ->select(
                 'nr.idnota_remision_venta',
                 'nr.nro_remision',
@@ -70,7 +72,7 @@ class NotaRemisionVentaController extends Controller
                 'nr.fecha_entrega',
                 'nr.recepcion_registrada_at',
                 'nr.estado',
-                'nr.usuario',
+                'u.name as usuario',
                 'trm.nro_timbrado as timbrado',
                 DB::raw("COALESCE(v.nro_factura, '-') as nro_factura"),
                 DB::raw("COALESCE(v.condicion, '-') as condicion"),
@@ -251,7 +253,7 @@ class NotaRemisionVentaController extends Controller
                     'recibido_por' => $request->input('recibido_por'),
                     'documento_receptor' => $request->input('documento_receptor'),
                     'estado' => 'Emitido',
-                    'usuario' => Auth::user()->name,
+                    'idusuario' => Auth::id(),
                     'observacion' => $request->input('observacion'),
                 ]);
 
@@ -351,7 +353,7 @@ class NotaRemisionVentaController extends Controller
             'fecha_entrega' => $request->input('fecha_entrega'),
             'hora_entrega' => $horaEntrega,
             'observacion_entrega' => $request->input('observacion_entrega'),
-            'usuario_recepcion' => Auth::user()->name,
+            'idusuario_recepcion' => Auth::id(),
             'recepcion_registrada_at' => now(),
             'estado' => 'Entregado',
         ]);
@@ -426,8 +428,12 @@ class NotaRemisionVentaController extends Controller
             ->leftJoin('depositos as dd', 'nr.iddeposito_destino', '=', 'dd.iddeposito')
             ->leftJoin('sucursales as so', 'do.idsucursal', '=', 'so.idsucursal')
             ->leftJoin('sucursales as sd', 'dd.idsucursal', '=', 'sd.idsucursal')
+            ->leftJoin('users as u', 'nr.idusuario', '=', 'u.id')
+            ->leftJoin('users as ur', 'nr.idusuario_recepcion', '=', 'ur.id')
             ->select(
                 'nr.*',
+                'u.name as usuario',
+                'ur.name as usuario_recepcion',
                 'so.descripcion as sucursal_origen',
                 'sd.descripcion as sucursal_destino',
                 'do.descripcion as deposito_origen',
@@ -702,7 +708,7 @@ class NotaRemisionVentaController extends Controller
                 'cantidad' => $cantidad,
                 'tipo_movimiento' => 'TRASLADO',
                 'estado' => 'Aplicado',
-                'usuario' => Auth::user()->name ?? null,
+                'idusuario' => Auth::id(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -868,7 +874,7 @@ class NotaRemisionVentaController extends Controller
             'fecha_entrega' => $remision->fecha_entrega,
             'hora_entrega' => $remision->hora_entrega,
             'observacion_entrega' => $remision->observacion_entrega,
-            'usuario_recepcion' => $remision->usuario_recepcion,
+            'idusuario_recepcion' => $remision->idusuario_recepcion,
             'recepcion_registrada_at' => (string) $remision->recepcion_registrada_at,
         ], JSON_UNESCAPED_UNICODE));
     }

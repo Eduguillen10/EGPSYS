@@ -29,7 +29,7 @@ class NotaDebitoV extends Model
         'fecha_vencimiento',
         'concepto',
         'estado',
-        'usuario',
+        'idusuario',
         'totaliva10',
         'totaliva5',
         'totalgravada10',

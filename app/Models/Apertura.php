@@ -23,8 +23,7 @@ class Apertura extends Model
         'fecha_apertura',
         'estado',
         'fecha_cierre',
-        'id',
-        'usuario',
+        'idusuario',
         'idtipoarqueo',
         'idsucursal'
     ];

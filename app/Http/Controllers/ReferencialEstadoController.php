@@ -25,6 +25,7 @@ use App\Models\Tarjeta;
 use App\Models\Timbrado;
 use App\Models\TipoArqueo;
 use App\Models\TipoImpuesto;
+use App\Models\TipoAjuste;
 use App\Models\TiposClientes;
 use App\Models\TiposDocumentos;
 use App\Models\Transportista;
@@ -117,6 +118,7 @@ class ReferencialEstadoController extends Controller
             'clientes' => ['label' => 'Clientes', 'model' => Clientes::class, 'search' => ['nombre', 'num_documento', 'email'], 'display' => ['nombre', 'num_documento', 'email']],
             'proveedores' => ['label' => 'Proveedores', 'model' => Proveedores::class, 'search' => ['razonsocial', 'ruc'], 'display' => ['razonsocial', 'ruc']],
             'tipo_impuesto' => ['label' => 'Tipo Impuesto', 'model' => TipoImpuesto::class, 'search' => ['descripcion'], 'display' => ['descripcion']],
+            'tipo_ajuste' => ['label' => 'Tipo Ajuste', 'model' => TipoAjuste::class, 'search' => ['descripcion'], 'display' => ['descripcion']],
             'productos' => ['label' => 'Productos', 'model' => Productos::class, 'search' => ['codigo', 'descripcion'], 'display' => ['codigo', 'descripcion']],
             'cargos' => ['label' => 'Cargos', 'model' => Cargos::class, 'search' => ['descripcion'], 'display' => ['descripcion']],
             'empleados' => ['label' => 'Empleados', 'model' => Empleados::class, 'search' => ['nombre', 'apellido', 'ci'], 'display' => ['nombre', 'apellido', 'ci']],

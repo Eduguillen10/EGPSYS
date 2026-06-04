@@ -14,7 +14,6 @@ class ComprasFormRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'usuario' => 'required|max:100',
             'idsucursal' => 'required|integer',
             'idproveedor' => 'required|integer|exists:proveedores,idproveedor',
             'iddeposito' => 'required|integer|exists:depositos,iddeposito',
@@ -26,7 +25,7 @@ class ComprasFormRequest extends FormRequest
             'nro_factura' => 'required|string|max:50',
             'timbrado' => 'required|string|max:25',
             'condicion' => 'required|string|max:30',
-            'totalcompra' => 'nullable|numeric|min:0',
+            'montocompra' => 'nullable|numeric|min:0',
             'idordencompra' => 'nullable|integer|exists:orden_compras,idordencompra',
             'idproducto' => 'required|array|min:1',
             'idproducto.*' => 'required|integer|exists:productos,idproducto',
@@ -35,14 +34,13 @@ class ComprasFormRequest extends FormRequest
             'precio_compra' => 'required|array|min:1',
             'precio_compra.*' => 'required|numeric|min:0',
             'items.*' => 'nullable|integer|min:1',
-            'totalitems.*' => 'nullable|numeric|min:0',
+            'montoitems.*' => 'nullable|numeric|min:0',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'usuario.required' => 'El campo usuario es obligatorio.',
             'idsucursal.required' => 'La sucursal es obligatoria.',
             'idproveedor.required' => 'El proveedor es obligatorio.',
             'idproveedor.exists' => 'El proveedor no existe en el sistema.',

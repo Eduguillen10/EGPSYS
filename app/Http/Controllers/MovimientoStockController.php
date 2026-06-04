@@ -18,6 +18,7 @@ class MovimientoStockController extends Controller
             ->join('productos as p', 'ms.idproducto', '=', 'p.idproducto')
             ->join('sucursales as s', 'ms.idsucursal', '=', 's.idsucursal')
             ->join('depositos as d', 'ms.iddeposito', '=', 'd.iddeposito')
+            ->join('users as u', 'ms.idusuario', '=', 'u.id')
             ->select(
                 'ms.idmovimiento_stock',
                 'ms.fecha',
@@ -28,7 +29,7 @@ class MovimientoStockController extends Controller
                 'ms.cantidad',
                 'ms.costo_unitario',
                 'ms.observacion',
-                'ms.usuario',
+                'u.name as usuario',
                 'ms.estado',
                 'p.codigo as producto_codigo',
                 'p.descripcion as producto',

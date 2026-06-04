@@ -39,11 +39,12 @@ class NotaDebitoVController extends Controller
             ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
             ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito')
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
+            ->join('users as u', 'c.idusuario', '=', 'u.id')
             ->select(
                 'c.idnota_debitov',
                 'c.nro_nota_debito',
                 'c.idventa',
-                'c.usuario',
+                'u.name as usuario',
                 's.idsucursal',
                 's.descripcion as sucursal',
                 'dep.iddeposito',
@@ -98,9 +99,10 @@ class NotaDebitoVController extends Controller
             ->join('clientes as cli', 'v.idcliente', '=', 'cli.idcliente')
             ->join('depositos as dep', 'v.iddeposito', '=', 'dep.iddeposito')
             ->join('timbrado as t', 'v.idtimbrado', '=', 't.idtimbrado')
+            ->join('users as u', 'v.idusuario', '=', 'u.id')
             ->select(
                 'v.idventa',
-                'v.usuario',
+                'u.name as usuario',
                 's.idsucursal',
                 's.descripcion as sucursal',
                 'dep.iddeposito',
@@ -200,7 +202,7 @@ class NotaDebitoVController extends Controller
                 'idventa' => (int) $request->get('idventa'),
                 'idsucursal' => (int) $request->get('idsucursal'),
                 'iddeposito' => (int) $request->get('iddeposito'),
-                'usuario' => $request->get('usuario'),
+                'idusuario' => Auth::id(),
                 'nro_factura' => $request->get('nro_factura'),
                 'nro_nota_debito' => null,
                 'concepto' => $request->get('concepto'),
@@ -522,11 +524,12 @@ class NotaDebitoVController extends Controller
             ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
             ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito')
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
+            ->join('users as u', 'c.idusuario', '=', 'u.id')
             ->select(
                 'c.idnota_debitov',
                 'c.nro_nota_debito',
                 'c.idventa',
-                'c.usuario',
+                'u.name as usuario',
                 's.idsucursal',
                 's.descripcion as sucursal',
                 'dep.iddeposito',
@@ -871,7 +874,7 @@ class NotaDebitoVController extends Controller
             if ($pendiente) {
                 $cobroPendiente = Cobro::findOrFail($pendiente->id_cobro);
                 $cobroPendiente->cobro_estado = 'Anulado';
-                $cobroPendiente->usuario = Auth::user()->name;
+                $cobroPendiente->idusuario = Auth::id();
                 $cobroPendiente->save();
             }
 
@@ -881,7 +884,7 @@ class NotaDebitoVController extends Controller
         if ($pendiente) {
             $cobroPendiente = Cobro::findOrFail($pendiente->id_cobro);
             $cobroPendiente->monto_cobro = $saldo;
-            $cobroPendiente->usuario = Auth::user()->name;
+            $cobroPendiente->idusuario = Auth::id();
             $cobroPendiente->save();
 
             $detallePendiente = CobroDetalle::findOrFail($pendiente->id_detcobro);
@@ -909,7 +912,7 @@ class NotaDebitoVController extends Controller
             'idcliente' => $idcliente,
             'monto_cobro' => $saldo,
             'cobro_estado' => 'Pendiente',
-            'usuario' => Auth::user()->name,
+            'idusuario' => Auth::id(),
         ]);
 
         CobroDetalle::create([

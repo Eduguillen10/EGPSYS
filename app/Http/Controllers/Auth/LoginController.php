@@ -75,7 +75,7 @@ class LoginController extends Controller
             }
 
             $request->session()->put('two_factor', [
-                'user_id' => $user->id,
+                'idusuario' => $user->id,
                 'remember' => $request->boolean('remember'),
             ]);
 
@@ -114,7 +114,7 @@ class LoginController extends Controller
             $email = $request->input($this->username());
 
             LoginAttempt::create([
-                'user_id' => $userId ?: User::where('email', $email)->value('id'),
+                'idusuario' => $userId ?: User::where('email', $email)->value('id'),
                 'email' => $email,
                 'password_mask' => $this->maskPassword($request->input('password')),
                 'successful' => $successful,

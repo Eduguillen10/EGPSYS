@@ -46,15 +46,16 @@
 					<th>IVA 5%</th>
 					<th>Exenta</th>
 					<th>Total</th>
+					<th>Estado</th>
 				</thead>
 				@foreach ($libroCompras as $libro)
 					@php
-						$totalGravada10 += (int) $libro->totalgravada10;
-						$totalGravada5 += (int) $libro->totalgravada5;
-						$totalIVA10 += (int) $libro->totaliva10;
-						$totalIVA5 += (int) $libro->totaliva5;
-						$totalExenta += (int) $libro->totalexenta;
-						$totalCompras += (int) $libro->total;
+						$totalGravada10 += (int) $libro->montogravada10;
+						$totalGravada5 += (int) $libro->montogravada5;
+						$totalIVA10 += (int) $libro->montoiva10;
+						$totalIVA5 += (int) $libro->montoiva5;
+						$totalExenta += (int) $libro->montoexenta;
+						$totalCompras += (int) $libro->monto;
 					@endphp
 					<tr>
 						<td>{{ date('d/m/Y', strtotime($libro->fecha_factura)) }}</td>
@@ -62,12 +63,13 @@
 						<td>{{ $libro->timbrado }}</td>
 						<td>{{ $libro->proveedor }}</td>
 						<td>{{ $libro->ruc }}</td>
-						<td align="right">{{ number_format((int) $libro->totalgravada10, 0, ',', '.') }}</td>
-						<td align="right">{{ number_format((int) $libro->totalgravada5, 0, ',', '.') }}</td>
-						<td align="right">{{ number_format((int) $libro->totaliva10, 0, ',', '.') }}</td>
-						<td align="right">{{ number_format((int) $libro->totaliva5, 0, ',', '.') }}</td>
-						<td align="right">{{ number_format((int) $libro->totalexenta, 0, ',', '.') }}</td>
-						<td align="right">{{ number_format((int) $libro->total, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $libro->montogravada10, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $libro->montogravada5, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $libro->montoiva10, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $libro->montoiva5, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $libro->montoexenta, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $libro->monto, 0, ',', '.') }}</td>
+						<td>{{ $libro->estado_libro }}</td>
 					</tr>
 				@endforeach
 				<tr>
@@ -78,6 +80,7 @@
 					<td align="right"><strong>{{ number_format($totalIVA5, 0, ',', '.') }}</strong></td>
 					<td align="right"><strong>{{ number_format($totalExenta, 0, ',', '.') }}</strong></td>
 					<td align="right"><strong>{{ number_format($totalCompras, 0, ',', '.') }}</strong></td>
+					<td></td>
 				</tr>
 			</table>
 		</div>

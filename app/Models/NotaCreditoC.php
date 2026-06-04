@@ -30,12 +30,12 @@ class NotaCreditoC extends Model
         'fecha_vencimiento',
         'concepto',        
         'estado',
-        'usuario',
-        'totaliva10',
-        'totaliva5',
-        'totalgravada10',
-        'totalgravada5',
-        'totalexenta',
-        'totalcompra'
+        'idusuario',
+        'montoiva10',
+        'montoiva5',
+        'montogravada10',
+        'montogravada5',
+        'montoexenta',
+        'montonota_credito_compra'
     ];
 }

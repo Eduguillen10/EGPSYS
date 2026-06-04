@@ -111,7 +111,7 @@
               			<th>Producto</th>
               			<th>Cantidad</th>
               			<th>Precio Compra</th>
-						<th>Total</th>
+						<th>Monto</th>
             		</thead>
             <tbody>
 			@if ($detalles->isNotEmpty())
@@ -125,7 +125,7 @@
             <td>{{ $det->producto }}</td>
             <td><input type="number" name="cantidad[{{ $det->idcompra_detalle }}]" value="{{ $det->cantidad }}" min="1" required></td>
             <td><input type="number" name="precio_compra[{{ $det->idcompra_detalle }}]" value="{{ $det->precio_compra }}" min="1" required></td>
-            <td>{{ number_format(($det->cantidad ?? 0) * ($det->precio_compra ?? 0), 2) }}</td>
+            <td>{{ number_format($det->montoitems > 0 ? $det->montoitems : (($det->cantidad ?? 0) * ($det->precio_compra ?? 0)), 0, ',', '.') }}</td>
         </tr>
     @endforeach
 @else
@@ -151,10 +151,16 @@
 	</div>	
 </form>
 
-@section('scripts')
+@push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('ordenForm').addEventListener('submit', function (event) {
+            var compraForm = document.getElementById('compraForm');
+
+            if (!compraForm) {
+                return;
+            }
+
+            compraForm.addEventListener('submit', function (event) {
                 var preciosCompra = document.querySelectorAll('input[name^="precio_compra["]');
 
                 for (var i = 0; i < preciosCompra.length; i++) {
@@ -167,7 +173,5 @@
             });
         });
     </script>
-@endsection
-
-
+@endpush
 @endsection

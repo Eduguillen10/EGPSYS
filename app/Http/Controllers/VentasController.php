@@ -54,9 +54,10 @@ class VentasController extends Controller
         ->join('depositos as dep', 'v.iddeposito', '=', 'dep.iddeposito')
         ->join('clientes as c', 'v.idcliente', '=', 'c.idcliente') 
         ->join('timbrado as t', 'v.idtimbrado', '=', 't.idtimbrado')   
+        ->join('users as u', 'v.idusuario', '=', 'u.id')
         ->select(
             'v.idventa',
-            'v.usuario',
+            'u.name as usuario',
             's.idsucursal',
             's.descripcion as sucursal',
             'dep.iddeposito',
@@ -247,7 +248,7 @@ class VentasController extends Controller
                 $venta->idtimbrado    = $idtimbrado;
                 $venta->idsucursal    = $request->get('idsucursal');
                 $venta->iddeposito    = $request->get('iddeposito');
-                $venta->usuario       = $request->get('usuario');
+                $venta->idusuario     = $user->id;
                 $venta->nro_factura   = $nro_factura_inicial;
                 $venta->condicion     = $request->get('condicion');
                 $venta->obs           = $request->get('obs');
@@ -355,8 +356,7 @@ class VentasController extends Controller
                         'SALIDA',
                         $cant,
                         null,
-                        'Salida por venta',
-                        $request->get('usuario')
+                        'Salida por venta'
                     );
 
                     // Totales reales
@@ -423,7 +423,7 @@ class VentasController extends Controller
                     'idcliente'    => $request->get('idcliente'),
                     'monto_cobro'  => $sumtotalitems,
                     'cobro_estado' => 'Pendiente',
-                    'usuario'      => $user->name,
+                    'idusuario'    => $user->id,
                 ]);
 
                 CobroDetalle::create([
@@ -447,9 +447,10 @@ class VentasController extends Controller
             ->join('depositos as dep', 'v.iddeposito', '=', 'dep.iddeposito')
             ->join('clientes as c', 'v.idcliente', '=', 'c.idcliente') 
             ->join('timbrado as t', 'v.idtimbrado', '=', 't.idtimbrado')   
+            ->join('users as u', 'v.idusuario', '=', 'u.id')
             ->select(
                 'v.idventa',
-                'v.usuario',
+                'u.name as usuario',
                 's.idsucursal',
                 's.descripcion as sucursal',
                 'dep.iddeposito',
@@ -560,8 +561,7 @@ class VentasController extends Controller
                 'ENTRADA',
                 (float) $det->cantidad,
                 null,
-                'Reversion por anulacion de venta',
-                Auth::user()->name ?? null
+                'Reversion por anulacion de venta'
             );
         }
 
@@ -576,7 +576,7 @@ class VentasController extends Controller
         if ($cobrosPendientes->isNotEmpty()) {
             Cobro::whereIn('id_cobro', $cobrosPendientes)->get()->each(function (Cobro $cobro): void {
                 $cobro->cobro_estado = 'Anulado';
-                $cobro->usuario = Auth::user()->name;
+                $cobro->idusuario = Auth::id();
                 $cobro->save();
             });
         }
@@ -653,7 +653,7 @@ class VentasController extends Controller
             'idcliente' => (int) $venta->idcliente,
             'monto_cobro' => $montoNegativo,
             'cobro_estado' => 'Realizado',
-            'usuario' => $user->name,
+            'idusuario' => $user->id,
         ]);
 
         CobroDetalle::create([
@@ -707,7 +707,8 @@ class VentasController extends Controller
             ->join('clientes as c', 'v.idcliente', '=', 'c.idcliente') 
             ->join('ciudades as ciu', 'c.idciudad', '=', 'ciu.idciudad') // Join con la tabla ciudad
             ->join('timbrado as t', 'v.idtimbrado', '=', 't.idtimbrado')   
-            ->select('v.idventa', 'v.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'c.idcliente', 'c.nombre as cliente', 'c.num_documento', 'c.direccion', 'c.idciudad', 'ciu.descripcion as ciudad', 'c.telefono' , 'v.fecha', 'v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 't.idtimbrado', 't.nro_timbrado', 't.fecha_inicial', 't.fecha_vencimiento' ,'v.condicion', 'v.obs' , 'v.nro_factura','v.estado','v.cta_cte_cliente', 'v.hash_documento', 'v.hash_anulacion', 'v.hash_version')
+            ->join('users as u', 'v.idusuario', '=', 'u.id')
+            ->select('v.idventa', 'u.name as usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'c.idcliente', 'c.nombre as cliente', 'c.num_documento', 'c.direccion', 'c.idciudad', 'ciu.descripcion as ciudad', 'c.telefono' , 'v.fecha', 'v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 't.idtimbrado', 't.nro_timbrado', 't.fecha_inicial', 't.fecha_vencimiento' ,'v.condicion', 'v.obs' , 'v.nro_factura','v.estado','v.cta_cte_cliente', 'v.hash_documento', 'v.hash_anulacion', 'v.hash_version')
             ->where('v.idventa', $idventa)
             ->orderBy('v.idventa','asc')
             ->first();

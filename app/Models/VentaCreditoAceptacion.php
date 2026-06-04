@@ -32,7 +32,7 @@ class VentaCreditoAceptacion extends Model
         'ip',
         'user_agent',
         'estado',
-        'usuario',
+        'idusuario',
         'observacion',
     ];
 

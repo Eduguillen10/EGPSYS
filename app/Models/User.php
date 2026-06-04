@@ -53,7 +53,19 @@ class User extends Authenticatable
 
     public function permisos()
     {
-        return $this->hasMany(UsuarioPermiso::class, 'user_id', 'id');
+        return $this->hasMany(UsuarioPermiso::class, 'idusuario', 'id');
+    }
+
+    public function sucursales()
+    {
+        return $this->belongsToMany(Sucursales::class, 'usuario_sucursal', 'idusuario', 'idsucursal')
+            ->withPivot('idempresa');
+    }
+
+    public function empresas()
+    {
+        return $this->belongsToMany(Empresas::class, 'usuario_sucursal', 'idusuario', 'idempresa')
+            ->withPivot('idsucursal');
     }
 
     public function tienePermiso(string $ventanaClave, string $accionClave = 'ver'): bool

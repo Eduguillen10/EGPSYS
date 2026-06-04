@@ -49,11 +49,11 @@
 
         <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
             <div class="form-group">
-                <label for="user_id">Usuario</label>
-                <select id="user_id" name="user_id" class="form-control">
+                <label for="idusuario">Usuario</label>
+                <select id="idusuario" name="idusuario" class="form-control">
                     <option value="">Todos</option>
                     @foreach ($usuarios as $usuario)
-                        <option value="{{ $usuario->id }}" {{ (string) ($filtros['user_id'] ?? '') === (string) $usuario->id ? 'selected' : '' }}>
+                        <option value="{{ $usuario->id }}" {{ (string) ($filtros['idusuario'] ?? '') === (string) $usuario->id ? 'selected' : '' }}>
                             {{ $usuario->name }} - {{ $usuario->email }}
                         </option>
                     @endforeach

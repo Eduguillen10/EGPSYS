@@ -15,8 +15,8 @@ class PedidosCompras extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'usuario',
         'idsucursal',
+        'idusuario',
         'fecha',
         'observacion',
         'estado',

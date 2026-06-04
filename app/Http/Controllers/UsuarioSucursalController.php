@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Auth;
-use App\Models\Sucursal;
 use App\Models\UsuarioSucursal;
 use Illuminate\Support\Facades\Redirect;
 use App\Http\Requests\UsuarioSucursalFormRequest;
@@ -26,9 +25,9 @@ class UsuarioSucursalController extends Controller
     	if ($request)
     	{
     		$query=trim ($request->get('searchText'));
-            $usuariosucursal=DB::table('usuariosucursal as us')
-            ->join('sucursal as s','us.idsucursal','=','s.idsucursal')
-            ->join('empresa as e','us.idempresa','=','e.idempresa')
+            $usuariosucursal=DB::table('usuario_sucursal as us')
+            ->join('sucursales as s','us.idsucursal','=','s.idsucursal')
+            ->join('empresas as e','us.idempresa','=','e.idempresa')
             ->select('us.idusuariosucursal','s.idsucursal','s.descripcion','e.idempresa','e.razon_social')
             ->Where('e.razon_social','LIKE','%'.$query.'%')
     		->orderBy('us.idusuariosucursal','asc')

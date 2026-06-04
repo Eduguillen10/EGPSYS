@@ -90,7 +90,7 @@ class VentaCreditoAceptacionController extends Controller
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'estado' => 'Aceptado',
-            'usuario' => Auth::user()->name,
+            'idusuario' => Auth::id(),
             'observacion' => $request->input('observacion'),
         ]);
 
@@ -108,9 +108,16 @@ class VentaCreditoAceptacionController extends Controller
     public function show(int $idventa, int $idaceptacion)
     {
         $venta = $this->ventaCredito($idventa);
-        $aceptacion = VentaCreditoAceptacion::where('idventa', $idventa)
-            ->where('idaceptacion_credito', $idaceptacion)
-            ->firstOrFail();
+        $aceptacion = DB::table('venta_credito_aceptaciones as a')
+            ->join('users as u', 'a.idusuario', '=', 'u.id')
+            ->select('a.*', 'u.name as usuario')
+            ->where('a.idventa', $idventa)
+            ->where('a.idaceptacion_credito', $idaceptacion)
+            ->first();
+
+        if (! $aceptacion) {
+            abort(404, 'Aceptacion de credito no encontrada.');
+        }
 
         return view('ventas.credito_aceptacion.show', [
             'venta' => $venta,
@@ -137,9 +144,16 @@ class VentaCreditoAceptacionController extends Controller
     public function comprobante(int $idventa, int $idaceptacion)
     {
         $venta = $this->ventaCredito($idventa);
-        $aceptacion = VentaCreditoAceptacion::where('idventa', $idventa)
-            ->where('idaceptacion_credito', $idaceptacion)
-            ->firstOrFail();
+        $aceptacion = DB::table('venta_credito_aceptaciones as a')
+            ->join('users as u', 'a.idusuario', '=', 'u.id')
+            ->select('a.*', 'u.name as usuario')
+            ->where('a.idventa', $idventa)
+            ->where('a.idaceptacion_credito', $idaceptacion)
+            ->first();
+
+        if (! $aceptacion) {
+            abort(404, 'Aceptacion de credito no encontrada.');
+        }
 
         return view('ventas.credito_aceptacion.comprobante', [
             'venta' => $venta,

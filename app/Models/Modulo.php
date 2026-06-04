@@ -30,7 +30,7 @@ class Modulo extends Model
         return self::query()
             ->where('estado', true)
             ->whereHas('ventanas.permisosUsuario', function ($query) use ($user) {
-                $query->where('user_id', $user->id)
+                $query->where('idusuario', $user->id)
                     ->whereHas('accion', function ($accion) {
                         $accion->where('clave', 'ver');
                     });
@@ -38,7 +38,7 @@ class Modulo extends Model
             ->with(['ventanas' => function ($query) use ($user) {
                 $query->where('estado', true)
                     ->whereHas('permisosUsuario', function ($permiso) use ($user) {
-                        $permiso->where('user_id', $user->id)
+                        $permiso->where('idusuario', $user->id)
                             ->whereHas('accion', function ($accion) {
                                 $accion->where('clave', 'ver');
                             });

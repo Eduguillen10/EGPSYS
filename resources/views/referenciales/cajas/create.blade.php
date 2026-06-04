@@ -24,14 +24,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="id">Usuario Creador</label>
-                    @if(Auth::check()) 
-                        <input type="text" class="form-control" value="{{ Auth::user()->name }}" readonly>
-                        <input type="hidden" name="id" value="{{ Auth::user()->id }}">
-                    @else
-                        <input type="text" class="form-control" value="No autenticado" readonly>
-                        <input type="hidden" name="id" value="">
-                    @endif
+                    <label>Usuario Creador</label>
+                    <input type="text" class="form-control" value="{{ Auth::user()->name }}" readonly>
                 </div>
 
                 <div class="form-group">

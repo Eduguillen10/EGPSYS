@@ -42,20 +42,22 @@ class LibroComprasController extends Controller
     {
         return DB::table('libro_compras as lc')
             ->join('compras as c', 'lc.idcompra', '=', 'c.idcompra')
-            ->join('proveedores as p', 'c.idproveedor', '=', 'p.idproveedor')
-            ->join('sucursales as s', 'lc.idsucursal', '=', 's.idsucursal')
+            ->join('proveedores as p', 'lc.idproveedor', '=', 'p.idproveedor')
+            ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
             ->select(
                 'lc.idlibrocompra',
                 'lc.idcompra',
-                'lc.total',
-                'lc.totalexenta',
-                'lc.totaliva5',
-                'lc.totaliva10',
+                'lc.idproveedor',
+                'lc.monto',
+                'lc.montoexenta',
+                'lc.montoiva5',
+                'lc.montoiva10',
+                'lc.montogravada5',
+                'lc.montogravada10',
+                'lc.estado as estado_libro',
                 'c.fecha_factura',
                 'c.nro_factura',
                 'c.timbrado',
-                'c.totalgravada5',
-                'c.totalgravada10',
                 'c.estado',
                 'p.razonsocial as proveedor',
                 'p.ruc',

@@ -11,7 +11,7 @@ class UsuarioPermiso extends Model
     protected $primaryKey = 'idusuariopermiso';
 
     protected $fillable = [
-        'user_id',
+        'idusuario',
         'idventana',
         'idaccion',
     ];
@@ -28,6 +28,6 @@ class UsuarioPermiso extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'idusuario', 'id');
     }
 }

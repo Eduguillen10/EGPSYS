@@ -74,12 +74,11 @@
             </div>
         </div>
 
-        {{-- USUARIO: no hace falta enviar name, pero si tu store() lo usa, dejalo hidden --}}
+        {{-- Usuario visible; el backend toma el id desde la sesion autenticada. --}}
         <div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
             <div class="form-group">
                 <label>Usuario</label>
                 <input type="text" class="form-control" value="{{ Auth::user()->name }}" readonly>
-                <input type="hidden" name="usuario" value="{{ Auth::user()->name }}">
             </div>
         </div>
 

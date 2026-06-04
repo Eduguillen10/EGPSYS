@@ -45,6 +45,7 @@ class OrdenComprasController extends Controller
                             ->join('sucursales as s', 'oc.idsucursal', '=', 's.idsucursal')
                             ->join('depositos as dep', 'oc.iddeposito', '=', 'dep.iddeposito')
                             ->join('proveedores as p', 'oc.idproveedor', '=', 'p.idproveedor')
+                            ->join('users as u', 'oc.idusuario', '=', 'u.id')
                             ->leftJoin('presupuestos_compras as pre', 'oc.idpresupuestocompra', '=', 'pre.idpresupuestocompra')
                             ->select(
                                 'oc.idordencompra', 
@@ -66,7 +67,7 @@ class OrdenComprasController extends Controller
                                 'oc.montoexenta',
                                 'oc.monto_orden_compra',
                                 'oc.observacion as orden_observacion',
-                                'oc.usuario',
+                                'u.name as usuario',
                                 'oc.estado'
                             );
 
@@ -120,7 +121,7 @@ class OrdenComprasController extends Controller
             'oc.montoexenta',
             'oc.monto_orden_compra',
             'oc.observacion',
-            'oc.usuario',
+            'u.name',
             'oc.estado'
         )
         ->paginate(7); // Paginar directamente
@@ -189,10 +190,10 @@ class OrdenComprasController extends Controller
                 $orden->ruc=$request->get('ruc');
                 $orden->direccion=$request->get('direccion');
                 $orden->idsucursal=Auth::user()->trabaja_sucursal; 
+                $orden->idusuario=Auth::id();
                 $orden->iddeposito=$request->get('iddeposito');                 
                 $orden->idpresupuestocompra=$request->get('idpresupuestocompra');
                 $orden->observacion=$request->get('observacion');
-                $orden->usuario=Auth::user()->name;
                 $orden->montoiva10=$request->get('montoiva10');
                 $orden->montoiva5=$request->get('montoiva5');
                 $orden->montogravada10=$request->get('montogravada10');
@@ -353,8 +354,9 @@ class OrdenComprasController extends Controller
             ->join('sucursales as s', 'oc.idsucursal', '=', 's.idsucursal')
             ->join('depositos as dep', 'oc.iddeposito', '=', 'dep.iddeposito')
             ->join('proveedores as p', 'oc.idproveedor', '=', 'p.idproveedor')  
+            ->join('users as u', 'oc.idusuario', '=', 'u.id')
             ->leftJoin('presupuestos_compras as pre', 'oc.idpresupuestocompra', '=', 'pre.idpresupuestocompra') //para estirar la obs del presupuesto      
-            ->select('oc.idordencompra', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.razonsocial as proveedor', 'p.ruc', 'p.direccion', 'oc.idpresupuestocompra', 'oc.fecha', 'oc.montoiva10', 'oc.montoiva5', 'oc.montogravada10', 'oc.montogravada5', 'oc.montoexenta', 'oc.monto_orden_compra', 'oc.observacion', 'oc.estado','oc.usuario','pre.observacion as observacion_presupuesto')
+            ->select('oc.idordencompra', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.razonsocial as proveedor', 'p.ruc', 'p.direccion', 'oc.idpresupuestocompra', 'oc.fecha', 'oc.montoiva10', 'oc.montoiva5', 'oc.montogravada10', 'oc.montogravada5', 'oc.montoexenta', 'oc.monto_orden_compra', 'oc.observacion', 'oc.estado','u.name as usuario','pre.observacion as observacion_presupuesto')
            ->where('oc.idordencompra','=',$id)
            ->orderBy('oc.idordencompra','desc')           
            ->first();
@@ -421,7 +423,7 @@ class OrdenComprasController extends Controller
         try {
             DB::beginTransaction();
 
-            $user = Auth::user()->name;
+            $userId = Auth::id();
             $suc = Auth::user()->trabaja_sucursal;
             $inscab = DB::table('orden_compras')->insertGetId([
                 'idpresupuestocompra' => $presupuestos->idpresupuestocompra,
@@ -429,7 +431,7 @@ class OrdenComprasController extends Controller
                 'ruc' => $proveedores->ruc,
                 'direccion' => $proveedores->direccion,
                 'idsucursal' => $suc,
-                'usuario' => $user,
+                'idusuario' => $userId,
                 'observacion' => $presupuestos->observacion,
                 'iddeposito' => $iddeposito,
                 'fecha' => now(),
@@ -472,8 +474,9 @@ class OrdenComprasController extends Controller
         $orden=DB::table('orden_compras as oc')
             ->join('sucursales as s', 'oc.idsucursal', '=', 's.idsucursal')
             ->join('depositos as dep', 'oc.iddeposito', '=', 'dep.iddeposito')
-            ->join('proveedores as p', 'oc.idproveedor', '=', 'p.idproveedor')        
-            ->select('oc.idordencompra', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.razonsocial as proveedor', 'p.ruc', 'p.direccion', 'oc.idpresupuestocompra', 'oc.fecha', 'oc.montoiva10', 'oc.montoiva5', 'oc.montogravada10', 'oc.montogravada5', 'oc.montoexenta', 'oc.monto_orden_compra', 'oc.observacion', 'oc.estado','oc.usuario')
+            ->join('proveedores as p', 'oc.idproveedor', '=', 'p.idproveedor')
+            ->join('users as u', 'oc.idusuario', '=', 'u.id')
+            ->select('oc.idordencompra', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.razonsocial as proveedor', 'p.ruc', 'p.direccion', 'oc.idpresupuestocompra', 'oc.fecha', 'oc.montoiva10', 'oc.montoiva5', 'oc.montogravada10', 'oc.montogravada5', 'oc.montoexenta', 'oc.monto_orden_compra', 'oc.observacion', 'oc.estado','u.name as usuario')
            ->where('oc.idordencompra','=',$id)
            ->orderBy('oc.idordencompra','desc')           
            ->first();

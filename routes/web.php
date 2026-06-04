@@ -7,6 +7,7 @@ use App\Http\Controllers\CiudadesController;
 use App\Http\Controllers\ClientesController;
 use App\Http\Controllers\ProveedoresController;
 use App\Http\Controllers\TipoImpuestoController;
+use App\Http\Controllers\TipoAjusteController;
 use App\Http\Controllers\ProductosController;
 use App\Http\Controllers\CargosController;
 use App\Http\Controllers\EmpleadosController;
@@ -44,6 +45,9 @@ use App\Http\Controllers\OrdenComprasController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\CuentasPagarController;
 use App\Http\Controllers\LibroComprasController;
+use App\Http\Controllers\NotaCreditoCController;
+use App\Http\Controllers\NotaDebitoCController;
+use App\Http\Controllers\NotaRemisionCompraController;
 use App\Http\Controllers\AjusteController;
 use App\Http\Controllers\CobroController;
 use App\Http\Controllers\VentasController;
@@ -95,6 +99,7 @@ Route::resource('referenciales/ciudades', CiudadesController::class);
 Route::resource('referenciales/clientes', ClientesController::class);
 Route::resource('referenciales/proveedores', ProveedoresController::class);
 Route::resource('referenciales/tipo_impuesto', TipoImpuestoController::class);
+Route::resource('referenciales/tipo_ajuste', TipoAjusteController::class);
 Route::resource('referenciales/productos', ProductosController::class);
 Route::resource('referenciales/cargos', CargosController::class);
 Route::resource('referenciales/empleados', EmpleadosController::class);
@@ -180,6 +185,30 @@ Route::get('compras/cuentas_pagar', [CuentasPagarController::class, 'index'])->n
 Route::get('compras/libro_compras', [LibroComprasController::class, 'index'])->name('libro_compras.index');
 Route::post('compras/libro_compras/reporte', [LibroComprasController::class, 'reporte'])->name('libro_compras.reporte');
 
+Route::controller(NotaCreditoCController::class)->group(function () {
+    Route::get('compras/nota_creditoc', 'index')->name('nota_creditoc.index');
+    Route::get('compras/nota_creditoc/create', 'create')->name('nota_creditoc.create');
+    Route::post('compras/nota_creditoc', 'store')->name('nota_creditoc.store');
+    Route::get('compras/nota_creditoc/{id}', 'show')->name('nota_creditoc.show');
+    Route::delete('compras/nota_creditoc/{id}', 'destroy')->name('nota_creditoc.destroy');
+});
+
+Route::controller(NotaDebitoCController::class)->group(function () {
+    Route::get('compras/nota_debitoc', 'index')->name('nota_debitoc.index');
+    Route::get('compras/nota_debitoc/create', 'create')->name('nota_debitoc.create');
+    Route::post('compras/nota_debitoc', 'store')->name('nota_debitoc.store');
+    Route::get('compras/nota_debitoc/{id}', 'show')->name('nota_debitoc.show');
+    Route::delete('compras/nota_debitoc/{id}', 'destroy')->name('nota_debitoc.destroy');
+});
+
+Route::controller(NotaRemisionCompraController::class)->group(function () {
+    Route::get('compras/nota_remision', 'index')->name('nota_remision_compra.index');
+    Route::get('compras/nota_remision/create', 'create')->name('nota_remision_compra.create');
+    Route::post('compras/nota_remision', 'store')->name('nota_remision_compra.store');
+    Route::get('compras/nota_remision/{idremisionc}', 'show')->name('nota_remision_compra.show');
+    Route::delete('compras/nota_remision/{idremisionc}', 'destroy')->name('nota_remision_compra.destroy');
+});
+
 Route::controller(AjusteController::class)->group(function () {
 
     Route::get('compras/ajuste', 'index')->name('ajuste.index');
@@ -191,19 +220,6 @@ Route::controller(AjusteController::class)->group(function () {
     Route::get('compras/ajuste/{id}/edit', 'edit')->name('ajuste.edit');
 
 });
-
-Route::resource('compras/compra', CompraController::class, [
-    'names' => [
-        'index' => 'compras.compra.index',
-        'create' => 'compras.compra.create',
-        'store' => 'compras.compra.store',
-        'show' => 'compras.compra.show',
-        'edit' => 'compras.compra.edit',
-        'update' => 'compras.compra.update',
-        'destroy' => 'compras.compra.destroy',
-        'modalelegir' => 'compras.compra.modalelegir',
-    ],
-]);
 
 Route::controller(AperturaController::class)->group(function () {
 

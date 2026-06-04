@@ -2,637 +2,650 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-use App\Http\Requests;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Input;
 use App\Http\Requests\NotaCreditoCRequest;
 use App\Models\NotaCreditoC;
 use App\Models\NotaCreditocDetalle;
-use DB;
-use App\Models\Stock;
-use App\Models\Sucursales;
-use Log;
+use App\Services\LibroComprasService;
+use App\Services\MovimientoStockService;
+use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
-
-use Carbon\Carbon;
-use Response;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redirect;
 
 class NotaCreditoCController extends Controller
 {
     public function __construct()
     {
-         $this->middleware('auth');
+        $this->middleware('auth');
     }
-    
+
     public function index(Request $request)
     {
-        if ($request)
-        {
-        $query = $request->get('searchText');
-        $query2 = $request->get('searchText2');
-        $query3 = $request->get('searchText3');
-        $query4 = $request->get('searchText4');      
-        $query5 = $request->get('searchText5');
-        $query6 = $request->get('searchText6');
+        $query = trim((string) $request->get('searchText'));
+        $queryProveedor = trim((string) $request->get('searchText2'));
+        $queryFecha = trim((string) $request->get('searchText3'));
+        $querySucursal = trim((string) $request->get('searchText4'));
+        $queryComprobante = trim((string) $request->get('searchText5'));
+        $queryRuc = trim((string) $request->get('searchText6'));
 
-        $nota_creditoc = DB::table('nota_credito_compra as c')
-        ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
-        ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito')
-        ->join('proveedores as p', 'c.idproveedor', '=', 'p.idproveedor')   
-        ->select('c.idnota_creditoc','c.idcompra', 'c.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.nombre as proveedor', 'p.num_documento', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalcompra', 'c.timbrado', 'c.condicion', 'c.concepto' , 'c.nro_factura','c.estado','c.fecha_factura','c.fecha_vencimiento')
-        ->where('c.idnota_creditoc', 'LIKE', '%'.$query.'%')
-        ->Where('p.nombre', 'LIKE', '%'.$query2.'%')
-        ->Where('c.fecha_registro', 'LIKE', '%'.$query3.'%')
-        ->Where('s.descripcion', 'LIKE', '%'.$query4.'%')
-        ->Where('c.nro_factura', 'LIKE', '%'.$query5.'%')        
-        ->Where('p.num_documento', 'LIKE', '%'.$query6.'%')
-        
-        ->orderBy('c.idcompra', 'desc')
-        ->paginate(7);
+        $builder = DB::table('nota_credito_compra as nc')
+            ->join('compras as c', 'nc.idcompra', '=', 'c.idcompra')
+            ->join('sucursales as s', 'nc.idsucursal', '=', 's.idsucursal')
+            ->join('depositos as dep', 'nc.iddeposito', '=', 'dep.iddeposito')
+            ->join('proveedores as p', 'nc.idproveedor', '=', 'p.idproveedor')
+            ->join('users as u', 'nc.idusuario', '=', 'u.id')
+            ->select(
+                'nc.idnota_creditoc',
+                'nc.idcompra',
+                'u.name as usuario',
+                's.descripcion as sucursal',
+                'dep.descripcion as deposito',
+                'p.razonsocial as proveedor',
+                'p.ruc as num_documento',
+                'nc.fecha_registro',
+                'nc.montoiva10',
+                'nc.montoiva5',
+                'nc.montogravada10',
+                'nc.montogravada5',
+                'nc.montoexenta',
+                'nc.montonota_credito_compra',
+                'nc.timbrado',
+                'nc.concepto',
+                'nc.nro_factura',
+                'nc.estado',
+                'nc.fecha_factura',
+                'nc.fecha_vencimiento',
+                'c.nro_factura as nro_factura_compra'
+            );
 
-           return view('compras.nota_creditoc.index',["nota_creditoc"=>$nota_creditoc,"searchText"=>$query,"searchText2"=>$query,"searchText3"=>$query,"searchText4"=>$query,"searchText5"=>$query,"searchText6"=>$query6]);
+        if ($query !== '') {
+            $builder->where('nc.idnota_creditoc', 'LIKE', '%' . $query . '%');
         }
+
+        if ($queryProveedor !== '') {
+            $builder->where('p.razonsocial', 'LIKE', '%' . $queryProveedor . '%');
+        }
+
+        if ($queryFecha !== '') {
+            $builder->where('nc.fecha_registro', 'LIKE', '%' . $queryFecha . '%');
+        }
+
+        if ($querySucursal !== '') {
+            $builder->where('s.descripcion', 'LIKE', '%' . $querySucursal . '%');
+        }
+
+        if ($queryComprobante !== '') {
+            $builder->where('nc.nro_factura', 'LIKE', '%' . $queryComprobante . '%');
+        }
+
+        if ($queryRuc !== '') {
+            $builder->where('p.ruc', 'LIKE', '%' . $queryRuc . '%');
+        }
+
+        $nota_creditoc = $builder->orderByDesc('nc.idnota_creditoc')->paginate(7);
+
+        return view('compras.nota_creditoc.index', [
+            'nota_creditoc' => $nota_creditoc,
+            'searchText' => $query,
+            'searchText2' => $queryProveedor,
+            'searchText3' => $queryFecha,
+            'searchText4' => $querySucursal,
+            'searchText5' => $queryComprobante,
+            'searchText6' => $queryRuc,
+        ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $suc = Auth::user()->trabaja_sucursal;
+        $suc = (int) Auth::user()->trabaja_sucursal;
+        $idcompra = $request->integer('idcompra') ?: null;
+        $compra = $idcompra ? $this->datosCompraParaNota($idcompra) : null;
 
-        $compras=DB::table('compra as c') 
-        ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal') 
-        ->join('proveedores as p', 'c.idproveedor', '=', 'p.idproveedor')  
-        ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito') 
-        ->select('c.idcompra', 'c.idordencompra', 'c.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.nombre as proveedor', 'p.num_documento', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalcompra', 'c.timbrado', 'c.condicion', 'c.concepto' , 'c.nro_factura','c.estado','c.fecha_factura','c.fecha_vencimiento') 
-        ->where('c.idsucursal', '=', $suc)
-        ->where('c.estado', '=', 'R')
-        ->get();    
+        if ($idcompra && ! $compra) {
+            return Redirect::route('nota_creditoc.create')
+                ->with('error', 'La compra seleccionada no existe o no esta disponible para nota de credito.');
+        }
 
-        $proveedores=DB::table('proveedores as p')        
-        ->select('p.idproveedor', 'p.nombre', 'p.num_documento','p.direccion')        
-        ->get();
-        $sucursales=DB::table('sucursales as s')
-        ->select('s.idsucursal','s.descripcion')
-        ->where('s.idsucursal', '=', $suc)
-        ->first();
-        
-        // Obtener depósitos relacionados a la sucursal seleccionada
-        $sucursales = Sucursales::find($suc);
-        $depositos = $sucursales->depositos()->select('iddeposito', 'descripcion')->get();
-            
-        // Por defecto, seleccionamos el primer depósito
-        $primerDeposito = $depositos->isNotEmpty() ? $depositos->first()->iddeposito : null;  
+        $compras = $this->comprasDisponibles($suc);
+        $sucursal = DB::table('sucursales')->where('idsucursal', $suc)->first();
+        $detalles = $compra ? $this->detallesCompraDisponibles((int) $compra->idcompra) : collect();
 
-        $productos = DB::table('productos as prod')
-        ->select(DB::raw('CONCAT(prod.codigo, " " ,prod.nombre) AS producto'),'prod.idproducto')
-        ->where('prod.estado','=','Activo')
-        ->get();
-        return view("compras.nota_creditoc.create",["proveedores"=>$proveedores,"sucursales"=>$sucursales,"depositos"=>$depositos,"productos"=>$productos,"compras"=>$compras]);
+        return view('compras.nota_creditoc.create', [
+            'compras' => $compras,
+            'compra' => $compra,
+            'detalles' => $detalles,
+            'sucursal' => $sucursal,
+        ]);
     }
 
-    public function store (NotaCreditoCRequest $request)
-    {        
+    public function store(NotaCreditoCRequest $request)
+    {
         try {
             DB::beginTransaction();
-                $nota_creditoc=new NotaCreditoC;
-                $nota_creditoc->idproveedor=$request->get('idproveedor');
-                $nota_creditoc->ruc=$request->get('ruc');
-                $nota_creditoc->idcompra=$request->get('idcompra');
-                $nota_creditoc->idsucursal=$request->get('idsucursal'); 
-                $nota_creditoc->iddeposito=$request->get('iddeposito');         
-                $nota_creditoc->usuario=$request->get('usuario');
-                $nota_creditoc->nro_factura=$request->get('nro_factura');
-                //$nota_creditoc->condicion=$request->get('condicion');                
-                $nota_creditoc->concepto=$request->get('concepto');
-                $nota_creditoc->timbrado=$request->get('timbrado');
-                $nota_creditoc->totaliva10=$request->get('totaliva10');
-                $nota_creditoc->totaliva5=$request->get('totaliva5');
-                $nota_creditoc->totalgravada10=$request->get('totalgravada10');
-                $nota_creditoc->totalgravada5=$request->get('totalgravada5');
-                $nota_creditoc->totalexenta=$request->get('totalexenta');
-                $nota_creditoc->totalcompra=$request->get('totalcompra');
-                                   
-                $mytime = Carbon::now('America/Asuncion');
-                $nota_creditoc->fecha_registro=$mytime->toDateTimeString(); 
-                $nota_creditoc->fecha_factura=$request->get('fecha_factura');
-                $nota_creditoc->fecha_vencimiento = $request->get('fecha_vencimiento');
 
-                $nota_creditoc->estado='R';
-               
-                $nota_creditoc->save();
+            $compra = $this->bloquearCompra((int) $request->input('idcompra'));
 
-                $idproducto = $request->get('idproducto');
-                $cantidad = $request->get('cantidad');
-                $precio_compra = $request->get('precio_compra');
-                
+            if (! $compra) {
+                throw new Exception('La compra seleccionada no existe.');
+            }
 
-                //  select  al arituculo con inner join de tipo impuesto de lo que te trae tu $idproducto[$cont]
-                $productos = DB::table('productos as prod')
-                ->join('tipo_impuesto as ti','prod.idtipo_impuesto','=','ti.idtipo_impuesto')
-                ->select('prod.idproducto','ti.porcentaje')
-                ->whereIn('prod.idproducto',$idproducto)
-                ->get();
+            if ($this->estadoEsCancelado($compra->estado)) {
+                throw new Exception('La compra seleccionada se encuentra cancelada.');
+            }
 
-                
-                $prod=0;
-                $cont = 0;
-                $items = 1;
-                $sumiva10=0;
-                $sumiva5=0;
-                $sumgravada10=0;
-                $sumgravada5=0;
-                $sumexenta=0;
-                $sumtotalitems=0;
+            if ((int) $compra->idsucursal !== (int) Auth::user()->trabaja_sucursal) {
+                throw new Exception('La compra seleccionada no pertenece a la sucursal actual.');
+            }
 
-                while ($cont < count($idproducto)) {
-                    $prod= $productos->where('idproducto','=',$idproducto[$cont])->first();
-                    //Return dd($prod);
-                    
-                    //  calculo de los demas campos que está en el notepad
-                    $porcentaje = $prod->porcentaje;
-                    $totalitems=0;
-                    $totalitems= $cantidad[$cont]*$precio_compra[$cont];
-                    
-                    //Return dd($porcentaje);
-                    
-                    if ($porcentaje==10){
-                        // Impuesto IVA 10
+            $cuenta = DB::table('cuentas_a_pagar')
+                ->where('idcompra', (int) $compra->idcompra)
+                ->lockForUpdate()
+                ->first();
 
-                        $imp=((100+$porcentaje)/$porcentaje);
+            if (! $cuenta) {
+                throw new Exception('La compra seleccionada no posee cuenta a pagar asociada.');
+            }
 
+            $idproductos = $request->input('idproducto', []);
+            $cantidades = $request->input('cantidad', []);
+            $precios = $request->input('precio_compra', []);
 
-                        // Monto Gravado del 10 % y Exento
-                        $gravada5=0;
-                        $m_gravada10=$totalitems;
-                        $exenta=0; 
+            $sumiva10 = 0;
+            $sumiva5 = 0;
+            $sumgravada10 = 0;
+            $sumgravada5 = 0;
+            $sumexenta = 0;
+            $summontoitems = 0;
+            $lineas = [];
 
+            foreach ($idproductos as $index => $idproducto) {
+                $idproducto = (int) $idproducto;
+                $cantidad = (float) ($cantidades[$index] ?? 0);
+                $precioCompra = (float) ($precios[$index] ?? 0);
 
-                        // IVA 10 %
-                        $iva10=round($m_gravada10/$imp);
-                        $iva5=0;
+                $this->validarDetalleDevolucion(
+                    (int) $compra->idcompra,
+                    (int) $compra->idsucursal,
+                    (int) $compra->iddeposito,
+                    $idproducto,
+                    $cantidad
+                );
 
-                        $gravada10 = $m_gravada10 - $iva10;
+                $linea = $this->calcularLinea($idproducto, $cantidad, $precioCompra, count($lineas) + 1);
+                $lineas[] = $linea;
 
-                        // total
-                        $total= $gravada10 + $gravada5 + $exenta + $iva10 + $iva5;
+                $sumiva10 += $linea['iva10'];
+                $sumiva5 += $linea['iva5'];
+                $sumgravada10 += $linea['gravada10'];
+                $sumgravada5 += $linea['gravada5'];
+                $sumexenta += $linea['exenta'];
+                $summontoitems += $linea['montoitems'];
+            }
 
-                    }else{
-                        if ($porcentaje==5) {
-                            // Impuesto IVA 5
-                            $imp=((100+$porcentaje)/$porcentaje);
+            if ($summontoitems <= 0) {
+                throw new Exception('Debe agregar al menos un producto valido al detalle.');
+            }
 
-                            // Monto Gravado del 5 % y Exento
-                            $m_gravada5=$totalitems; 
-                            $gravada10=0;
-                            $exenta=round((($totalitems) ) - $m_gravada5); 
+            if ($summontoitems > (int) $cuenta->montoapagar) {
+                throw new Exception('El monto de la nota de credito no puede superar el saldo pendiente de la cuenta a pagar.');
+            }
 
-                            // IVA 5 %
-                            $iva10=0;
-                            $iva5=round($m_gravada5/$imp);
+            $notaCredito = NotaCreditoC::create([
+                'idcompra' => (int) $compra->idcompra,
+                'idsucursal' => (int) $compra->idsucursal,
+                'iddeposito' => (int) $compra->iddeposito,
+                'idproveedor' => (int) $compra->idproveedor,
+                'ruc' => (string) $compra->ruc,
+                'nro_factura' => $request->input('nro_factura'),
+                'timbrado' => $request->input('timbrado'),
+                'fecha_registro' => now()->toDateString(),
+                'fecha_factura' => $request->input('fecha_factura'),
+                'fecha_vencimiento' => $compra->fecha_vencimiento,
+                'concepto' => $request->input('concepto'),
+                'montoiva10' => $sumiva10,
+                'montoiva5' => $sumiva5,
+                'montogravada10' => $sumgravada10,
+                'montogravada5' => $sumgravada5,
+                'montoexenta' => $sumexenta,
+                'montonota_credito_compra' => $summontoitems,
+                'estado' => 'Realizado',
+                'idusuario' => Auth::id(),
+            ]);
 
-                            $gravada5 = $m_gravada5 - $iva5;
+            foreach ($lineas as $linea) {
+                NotaCreditocDetalle::create(array_merge($linea, [
+                    'idnota_creditoc' => (int) $notaCredito->idnota_creditoc,
+                ]));
 
-                            // total
-                            $total= $gravada10 + $gravada5 + $exenta + $iva10 + $iva5;
+                $this->registrarSalidaStockNotaCredito(
+                    (int) $compra->idsucursal,
+                    (int) $compra->iddeposito,
+                    (int) $linea['idproducto'],
+                    (float) $linea['cantidad'],
+                    (int) $notaCredito->idnota_creditoc
+                );
+            }
 
-                        }else{
-                            if ($porcentaje==0){
-                                // Exento
-                                
-                                // Monto Gravado y Exento
-                                $gravada10= 0;
-                                $gravada5= 0;
-                                $exenta= $totalitems;
+            $this->ajustarCuentaPagar((int) $compra->idcompra, $summontoitems);
+            $this->actualizarLibroCompras((int) $compra->idcompra);
 
-                                //iva sin IVA                                 
-                                $iva10=0;
-                                $iva5=0;
-
-                                //total
-                                $total= $gravada10 + $gravada5 + $exenta + $iva10 + $iva5;
-
-                            }
-                        }
-
-                    }
-
-                        $detalle = new NotaCreditoCDetalle();
-                        $detalle->idnota_creditoc= $nota_creditoc->idnota_creditoc;
-                        $detalle->idproducto= $idproducto[$cont];
-                        $detalle->cantidad= $cantidad[$cont];
-                        $detalle->precio_compra= $precio_compra[$cont];
-                        $detalle->items= $items;
-                        $detalle->iva10= $iva10;
-                        $detalle->iva5= $iva5;
-                        $detalle->gravada10= $gravada10;
-                        $detalle->gravada5= $gravada5;
-                        $detalle->exenta= $exenta;
-                        $detalle->totalitems= $totalitems;
-                        
-                        $detalle->save();
-                        //calcular mi stock
-
-                        $con_stk=DB::select("Select idstock, existencia from stock where idsucursal=".$request->get('idsucursal')." and iddeposito=".$request->get('iddeposito')." and idproducto=".$idproducto[$cont]);
-                        
-                        $existe=0; $existencia=0;
-						foreach ($con_stk as $cst) {
-							$existe=1;
-							$idstock=$cst->idstock;
-							$existencia=$cst->existencia;
-                            
-						}
-
-						if ($existe == 1) {
-                            // Modificar la existencia para una salida
-                            if ($existencia >= $cantidad[$cont]) {
-                                $salida = DB::update("UPDATE stock SET existencia = existencia - ".$cantidad[$cont]." WHERE idsucursal=".$request->get('idsucursal')." AND iddeposito=".$request->get('iddeposito')." AND idproducto=".$idproducto[$cont]." AND idstock=".$idstock);
-                            } else {
-                                // No hay suficiente stock para la salida
-                                session()->flash('error', 'No hay suficiente stock para este producto.');
-                            }
-                        } else {
-                            // No existe un registro en stock para el producto
-                            session()->flash('error', 'No hay stock para este producto en la sucursal y depósito especificados.');
-                        }
-
-
-                        $cont=$cont+1;
-                        $items++;
-
-                        $sumiva10= $sumiva10 + $iva10;
-                        $sumiva5= $sumiva5 + $iva5;
-                        $sumgravada10= $sumgravada10 + $gravada10;
-                        $sumgravada5= $sumgravada5 + $gravada5;
-                        $sumexenta= $sumexenta + $exenta;
-                        $sumtotalitems= $sumtotalitems + $totalitems;
-							
-				}
-                    
-            
-                $udpcabecera=DB::table('nota_credito_compra')
-                ->where('idnota_creditoc','=',$nota_creditoc->idnota_creditoc)
-                ->update(['totaliva10'=>$sumiva10,
-                            'totaliva5'=>$sumiva5,
-                            'totalgravada10'=>$sumgravada10,
-                            'totalgravada5'=>$sumgravada5,
-                            'totalexenta'=>$sumexenta,
-                            'totalcompra'=>$sumtotalitems]); 
-                     
-                $updateCuentaPagar=DB::table('cuentas_a_pagar')
-                    ->where('idcompra', $nota_creditoc->idcompra)
-                    ->update(['montoapagar' => DB::raw('GREATEST(0, montoapagar - ' . (int) $sumtotalitems . ')')]);
-                     
-               
             DB::commit();
-            
+
+            return Redirect::route('nota_creditoc.show', $notaCredito->idnota_creditoc)
+                ->with('success', 'Operacion exitosa.');
         } catch (Exception $e) {
-            DB::rollback();
-            // Imprimir o registrar el mensaje de error para depuración
-            Log::error('Error al actualizar la cuenta a pagar: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Hubo un problema al actualizar la cuenta a pagar');
+            DB::rollBack();
+
+            return back()->withErrors(['error' => $e->getMessage()])->withInput();
         }
-
-        return Redirect::to('compras/nota_creditoc');
-
     }
-   
 
     public function show($id)
     {
-        $nota_creditoc=DB::table('nota_credito_compra as c')
-            ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
-            ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito')
-            ->join('proveedores as p', 'c.idproveedor', '=', 'p.idproveedor')        
-            ->select('c.idnota_creditoc', 'c.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.nombre as proveedor', 'p.num_documento','c.idcompra', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalcompra', 'c.timbrado', 'c.condicion', 'c.concepto' , 'c.nro_factura','c.estado','c.fecha_factura','c.fecha_vencimiento')
-           ->where('c.idnota_creditoc','=',$id)
-           ->orderBy('c.idnota_creditoc','desc')
-           //->groupBy('c.idnota_creditoc', 'c.usuario', 's.idsucursal', 's.descripcion', 'dep.iddeposito', 'dep.descripcion', 'p.idproveedor', 'p.nombre', 'p.num_documento','c.idordencompra', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalcompra', 'c.timbrado', 'c.condicion', 'c.concepto' , 'c.nro_factura','c.estado','c.fecha_factura','c.fecha_vencimiento')
-           ->first();
+        $datos = $this->datosNotaCredito((int) $id);
 
-        $detalles=DB::table('nota_credito_compra_detalle as d')
-           ->join('productos as a','d.idproducto','=','a.idproducto')
-           ->select('a.nombre as producto','d.cantidad','d.precio_compra','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.totalitems')
-           ->where('d.idnota_creditoc','=',$id) 
-           ->get();
+        if (! $datos['nota_creditoc']) {
+            abort(404);
+        }
 
-        return view("compras.nota_creditoc.show",["nota_creditoc"=>$nota_creditoc,"detalles"=>$detalles]);
+        return view('compras.nota_creditoc.show', $datos);
     }
 
     public function destroy($id)
     {
-        $nota_creditoc=NotaCreditoC::findOrFail($id);        
-        $nota_creditoc->Estado='A';
-        $nota_creditoc->update();
-        return Redirect::to('compras/nota_creditoc')->with('success', 'Nota de Crédito anulado correctamente.'); 
-    }
+        try {
+            DB::beginTransaction();
 
-    public function destroydetalle($id)
-    {
-       
-        $nota_creditoc=NotaCreditocDetalle::findOrFail($id);        
-        $idcab=$nota_creditoc->idnota_creditoc;
-        $nota_creditoc->delete();
+            $notaCredito = NotaCreditoC::where('idnota_creditoc', (int) $id)->lockForUpdate()->firstOrFail();
 
-        return Redirect::to('compras/nota_creditoc/'.$idcab.'/edit');        
-    }
+            if ($this->estadoEsCancelado($notaCredito->estado)) {
+                DB::rollBack();
 
-    public function insertar_facturas (Request $request)
-    {
-        // Validación de campos
-        $validator = Validator::make($request->all(), [                     
-            'nro_factura' => 'required',
-            'timbrado' => 'required',
-            //'condicion' => 'required'            
-        ]);
+                return Redirect::route('nota_creditoc.index')->with('info', 'La nota de credito ya estaba cancelada.');
+            }
 
-        // Manejo de errores de validación
-        if ($validator->fails()) {
-            $errors = $validator->errors();
-            $error_message = implode('<br>', $errors->all());
-        
-            return response()->json(['error' => $error_message], 400);
+            $detalles = NotaCreditocDetalle::where('idnota_creditoc', (int) $notaCredito->idnota_creditoc)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($detalles as $detalle) {
+                $this->registrarEntradaStockNotaCredito(
+                    (int) $notaCredito->idsucursal,
+                    (int) $notaCredito->iddeposito,
+                    (int) $detalle->idproducto,
+                    (float) $detalle->cantidad,
+                    (int) $notaCredito->idnota_creditoc
+                );
+            }
+
+            DB::table('cuentas_a_pagar')
+                ->where('idcompra', (int) $notaCredito->idcompra)
+                ->increment('montoapagar', (int) $notaCredito->montonota_credito_compra);
+
+            $this->normalizarEstadoCuentaPagar((int) $notaCredito->idcompra);
+
+            $notaCredito->estado = 'Cancelado';
+            $notaCredito->save();
+
+            $this->actualizarLibroCompras((int) $notaCredito->idcompra);
+
+            DB::commit();
+
+            return Redirect::route('nota_creditoc.index')
+                ->with('success', 'Nota de credito anulada correctamente.');
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            return Redirect::route('nota_creditoc.index')
+                ->with('error', 'Error al anular la nota de credito: ' . $e->getMessage());
         }
-        
-        $idcompra = $request->get('numero_factura');    
-        $nro_factura = $request->get('nro_factura');        //el nro de nota de crédito
-        //$condicion = $request->get('condicion');
-        $concepto = $request->get('concepto');
-        $timbrado = $request->get('timbrado');
-        $fecha_factura = $request->get('fecha_factura');
-        //$fecha_vencimiento = $request->get('fecha_vencimiento');
-        //return dd( $request->get('numero_factura'));
-        // Asigna el resultado de la consulta a la variable $compra
-        $compras = DB::table('compra as oc')        
-            ->select('oc.idcompra','oc.idsucursal','oc.idproveedor','oc.iddeposito')
-            ->where('oc.idcompra','=',$idcompra)
+    }
+
+    private function comprasDisponibles(int $idsucursal)
+    {
+        return DB::table('compras as c')
+            ->join('proveedores as p', 'c.idproveedor', '=', 'p.idproveedor')
+            ->join('depositos as d', 'c.iddeposito', '=', 'd.iddeposito')
+            ->join('cuentas_a_pagar as cp', 'c.idcompra', '=', 'cp.idcompra')
+            ->select(
+                'c.idcompra',
+                'c.nro_factura',
+                'c.fecha_factura',
+                'c.timbrado',
+                'p.razonsocial as proveedor',
+                'p.ruc',
+                'd.descripcion as deposito',
+                'cp.montoapagar',
+                'cp.estado as estado_cuenta'
+            )
+            ->where('c.idsucursal', '=', $idsucursal)
+            ->whereIn('c.estado', ['Realizado', 'R'])
+            ->where('cp.montoapagar', '>', 0)
+            ->orderByDesc('c.idcompra')
+            ->get();
+    }
+
+    private function datosCompraParaNota(int $idcompra)
+    {
+        return DB::table('compras as c')
+            ->join('proveedores as p', 'c.idproveedor', '=', 'p.idproveedor')
+            ->join('depositos as d', 'c.iddeposito', '=', 'd.iddeposito')
+            ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
+            ->join('users as u', 'c.idusuario', '=', 'u.id')
+            ->join('cuentas_a_pagar as cp', 'c.idcompra', '=', 'cp.idcompra')
+            ->select(
+                'c.idcompra',
+                'c.idsucursal',
+                'c.iddeposito',
+                'c.idproveedor',
+                'c.idusuario',
+                'c.nro_factura',
+                'c.timbrado',
+                'c.fecha_factura',
+                'c.fecha_vencimiento',
+                'c.ruc',
+                'c.estado',
+                'c.montocompra',
+                'p.razonsocial as proveedor',
+                'd.descripcion as deposito',
+                's.descripcion as sucursal',
+                'u.name as usuario',
+                'cp.montoapagar',
+                'cp.montopagado',
+                'cp.estado as estado_cuenta'
+            )
+            ->where('c.idcompra', '=', $idcompra)
+            ->whereIn('c.estado', ['Realizado', 'R'])
             ->first();
-        
-        if ($compras) {
-            // Traer proveedor por first() para poder capturar su ruc
-            $proveedores = DB::table('proveedores as p')
-                ->select('p.idproveedor', 'p.nombre', 'p.num_documento', 'p.direccion')
-                ->where('p.idproveedor', '=', $compras->idproveedor)
-                ->first();
-            //return dd($compras);
+    }
+
+    private function bloquearCompra(int $idcompra)
+    {
+        return DB::table('compras')
+            ->where('idcompra', '=', $idcompra)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    private function detallesCompraDisponibles(int $idcompra)
+    {
+        return DB::table('compra_detalle as d')
+            ->join('productos as p', 'd.idproducto', '=', 'p.idproducto')
+            ->select(
+                'd.idcompra_detalle',
+                'd.idproducto',
+                'p.descripcion as producto',
+                'd.items',
+                'd.cantidad',
+                'd.precio_compra',
+                'd.montoitems'
+            )
+            ->where('d.idcompra', '=', $idcompra)
+            ->orderBy('d.items')
+            ->get()
+            ->map(function ($detalle) use ($idcompra) {
+                $devuelto = DB::table('nota_credito_compra_detalle as ncd')
+                    ->join('nota_credito_compra as nc', 'ncd.idnota_creditoc', '=', 'nc.idnota_creditoc')
+                    ->where('nc.idcompra', '=', $idcompra)
+                    ->whereNotIn('nc.estado', ['Cancelado', 'Anulado', 'Anulada', 'A'])
+                    ->where('ncd.idproducto', '=', $detalle->idproducto)
+                    ->sum('ncd.cantidad');
+
+                $detalle->cantidad_disponible = max(0, (float) $detalle->cantidad - (float) $devuelto);
+
+                return $detalle;
+            })
+            ->filter(fn ($detalle) => $detalle->cantidad_disponible > 0)
+            ->values();
+    }
+
+    private function datosNotaCredito(int $id): array
+    {
+        $nota_creditoc = DB::table('nota_credito_compra as nc')
+            ->join('compras as c', 'nc.idcompra', '=', 'c.idcompra')
+            ->join('sucursales as s', 'nc.idsucursal', '=', 's.idsucursal')
+            ->join('depositos as dep', 'nc.iddeposito', '=', 'dep.iddeposito')
+            ->join('proveedores as p', 'nc.idproveedor', '=', 'p.idproveedor')
+            ->join('users as u', 'nc.idusuario', '=', 'u.id')
+            ->select(
+                'nc.idnota_creditoc',
+                'nc.idcompra',
+                'u.name as usuario',
+                's.descripcion as sucursal',
+                'dep.descripcion as deposito',
+                'p.razonsocial as proveedor',
+                'p.ruc as num_documento',
+                'nc.fecha_registro',
+                'nc.montoiva10',
+                'nc.montoiva5',
+                'nc.montogravada10',
+                'nc.montogravada5',
+                'nc.montoexenta',
+                'nc.montonota_credito_compra',
+                'nc.timbrado',
+                'nc.concepto',
+                'nc.nro_factura',
+                'nc.estado',
+                'nc.fecha_factura',
+                'nc.fecha_vencimiento',
+                'c.nro_factura as nro_factura_compra'
+            )
+            ->where('nc.idnota_creditoc', '=', $id)
+            ->first();
+
+        $detalles = DB::table('nota_credito_compra_detalle as d')
+            ->join('productos as p', 'd.idproducto', '=', 'p.idproducto')
+            ->select(
+                'p.descripcion as producto',
+                'd.cantidad',
+                'd.precio_compra',
+                'd.iva10',
+                'd.iva5',
+                'd.gravada10',
+                'd.gravada5',
+                'd.exenta',
+                'd.montoitems'
+            )
+            ->where('d.idnota_creditoc', '=', $id)
+            ->orderBy('d.items')
+            ->get();
+
+        return compact('nota_creditoc', 'detalles');
+    }
+
+    private function validarDetalleDevolucion(
+        int $idcompra,
+        int $idsucursal,
+        int $iddeposito,
+        int $idproducto,
+        float $cantidad
+    ): void {
+        if ($cantidad <= 0) {
+            throw new Exception('La cantidad devuelta debe ser mayor a cero.');
+        }
+
+        $detalleCompra = DB::table('compra_detalle')
+            ->where('idcompra', '=', $idcompra)
+            ->where('idproducto', '=', $idproducto)
+            ->first();
+
+        if (! $detalleCompra) {
+            throw new Exception('El producto seleccionado no pertenece a la compra original.');
+        }
+
+        $devuelto = DB::table('nota_credito_compra_detalle as ncd')
+            ->join('nota_credito_compra as nc', 'ncd.idnota_creditoc', '=', 'nc.idnota_creditoc')
+            ->where('nc.idcompra', '=', $idcompra)
+            ->whereNotIn('nc.estado', ['Cancelado', 'Anulado', 'Anulada', 'A'])
+            ->where('ncd.idproducto', '=', $idproducto)
+            ->sum('ncd.cantidad');
+
+        $disponibleParaDevolver = (float) $detalleCompra->cantidad - (float) $devuelto;
+
+        if ($cantidad > $disponibleParaDevolver) {
+            throw new Exception('La cantidad devuelta supera la cantidad disponible para devolver del producto.');
+        }
+
+        $stock = DB::table('stock')
+            ->where('idsucursal', '=', $idsucursal)
+            ->where('iddeposito', '=', $iddeposito)
+            ->where('idproducto', '=', $idproducto)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $stock || (float) $stock->cantidad < $cantidad) {
+            $producto = DB::table('productos')->where('idproducto', '=', $idproducto)->value('descripcion') ?? $idproducto;
+            $disponibleStock = $stock ? (float) $stock->cantidad : 0;
+
+            throw new Exception("No existe stock suficiente para devolver {$producto}. Disponible: {$disponibleStock}, requerido: {$cantidad}.");
+        }
+    }
+
+    private function calcularLinea(int $idproducto, float $cantidad, float $precioCompra, int $items): array
+    {
+        $producto = DB::table('productos as prod')
+            ->join('tipo_impuesto as ti', 'prod.idtipoimpuesto', '=', 'ti.idtipoimpuesto')
+            ->select('prod.idproducto', 'ti.porcentaje')
+            ->where('prod.idproducto', $idproducto)
+            ->first();
+
+        if (! $producto) {
+            throw new Exception("Producto con ID {$idproducto} no encontrado.");
+        }
+
+        $porcentaje = (int) $producto->porcentaje;
+        $montoitems = (int) round($cantidad * $precioCompra);
+        $iva10 = 0;
+        $iva5 = 0;
+        $gravada10 = 0;
+        $gravada5 = 0;
+        $exenta = 0;
+
+        if ($porcentaje === 10) {
+            $iva10 = (int) round($montoitems / ((100 + $porcentaje) / $porcentaje));
+            $gravada10 = $montoitems - $iva10;
+        } elseif ($porcentaje === 5) {
+            $iva5 = (int) round($montoitems / ((100 + $porcentaje) / $porcentaje));
+            $gravada5 = $montoitems - $iva5;
         } else {
-            // Manejar el caso en el que $compras es nulo
-            $error_message = "No se encontraron datos para el número de compra proporcionado.";
-            // Puedes agregar más información al mensaje de error según tus necesidades.
-            return response()->json(['error' => $error_message], 404);
-            // Puedes cambiar el código de respuesta y el formato del mensaje según tus requisitos.
-                }
-            //return dd($compras);
-        // Insertar en la tabla nota de credito 
-        $user = Auth::user()->name;
-        $suc = Auth::user()->trabaja_sucursal;
-        $inscab = DB::table('nota_credito_compra')->insertGetId([
-            'idcompra' => $compras->idcompra,
-            'idproveedor' => $proveedores->idproveedor,
-            'ruc' => $proveedores->num_documento,            
-            'idsucursal' => $suc,
-            'usuario' => $user,            
-            'iddeposito' => $compras->iddeposito, //Así estiro mi deposito de mi orden...
-            'fecha_registro' => now(),
-            'fecha_factura' => $fecha_factura,
-            //'fecha_vencimiento' => $fecha_vencimiento,
-            'estado' => 'R',  // Establece un valor por defecto
-            'nro_factura' => $nro_factura,
-            'timbrado' => $timbrado,
-            //'condicion' => $condicion,
-            'concepto' => $concepto
-        ]);
-        //return dd( $inscab);
-        $idcaborden = $inscab;     
-        //dd($idcaborden); 
-        // vas a traer mediante un get() el detalle de los presupuestos 
-        $compra_detalle=DB::table('compra_detalle as od')        
-        ->select('od.idcompra_detalle', 'od.idcompra', 'od.items','od.idproducto','od.cantidad','od.precio_compra')
-        ->where('od.idcompra', '=', $idcompra)
-        ->get();
-        //dd($orden_detalle);
-         
-        // Antes de la inserción, verifica que $idcaborden existe en la tabla presupuestocompra
-        
-        // Insertar detalles en la tabla nota_credito_compra_detalle
-        foreach ($compra_detalle as $detalle) {
-            DB::table('nota_credito_compra_detalle')->insert([
-                'idnota_creditoc' => $idcaborden,
-                'items' => $detalle->items,
-                'idproducto' => $detalle->idproducto,
-                'cantidad' => $detalle->cantidad,
-                'precio_compra' => $detalle->precio_compra
+            $exenta = $montoitems;
+        }
+
+        return [
+            'items' => $items,
+            'idproducto' => $idproducto,
+            'cantidad' => (int) $cantidad,
+            'precio_compra' => (int) $precioCompra,
+            'iva10' => $iva10,
+            'iva5' => $iva5,
+            'gravada10' => $gravada10,
+            'gravada5' => $gravada5,
+            'exenta' => $exenta,
+            'montoitems' => $montoitems,
+        ];
+    }
+
+    private function registrarSalidaStockNotaCredito(
+        int $idsucursal,
+        int $iddeposito,
+        int $idproducto,
+        float $cantidad,
+        int $idnotaCredito
+    ): void {
+        DB::table('stock')
+            ->where('idsucursal', '=', $idsucursal)
+            ->where('iddeposito', '=', $iddeposito)
+            ->where('idproducto', '=', $idproducto)
+            ->decrement('cantidad', $cantidad);
+
+        app(MovimientoStockService::class)->registrar(
+            $idproducto,
+            $idsucursal,
+            $iddeposito,
+            'NC_COMPRA',
+            $idnotaCredito,
+            'nota_credito_compra_detalle',
+            'SALIDA',
+            $cantidad,
+            null,
+            'Devolucion por nota de credito de compra'
+        );
+    }
+
+    private function registrarEntradaStockNotaCredito(
+        int $idsucursal,
+        int $iddeposito,
+        int $idproducto,
+        float $cantidad,
+        int $idnotaCredito
+    ): void {
+        $updated = DB::table('stock')
+            ->where('idsucursal', '=', $idsucursal)
+            ->where('iddeposito', '=', $iddeposito)
+            ->where('idproducto', '=', $idproducto)
+            ->increment('cantidad', $cantidad);
+
+        if ($updated === 0) {
+            DB::table('stock')->insert([
+                'idsucursal' => $idsucursal,
+                'iddeposito' => $iddeposito,
+                'idproducto' => $idproducto,
+                'cantidad' => $cantidad,
             ]);
         }
-       
-        return Redirect::to('compras/nota_creditoc/'.$idcaborden.'/edit');
 
+        app(MovimientoStockService::class)->registrar(
+            $idproducto,
+            $idsucursal,
+            $iddeposito,
+            'NC_COMPRA',
+            $idnotaCredito,
+            'nota_credito_compra_detalle',
+            'ENTRADA',
+            $cantidad,
+            null,
+            'Anulacion de nota de credito de compra'
+        );
     }
 
-    public function edit($id)
+    private function ajustarCuentaPagar(int $idcompra, int $montoNota): void
     {
-        $nota_creditoc=DB::table('nota_credito_compra as c')
-            ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
-            ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito')
-            ->join('proveedores as p', 'c.idproveedor', '=', 'p.idproveedor')        
-            ->select('c.idnota_creditoc', 'c.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.nombre as proveedor', 'p.num_documento','c.idcompra', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalcompra', 'c.timbrado', 'c.condicion', 'c.concepto' , 'c.nro_factura','c.estado','c.fecha_factura','c.fecha_vencimiento')
-           ->where('c.idnota_creditoc','=',$id)
-           ->orderBy('c.idnota_creditoc','desc')           
-           ->first();
+        DB::table('cuentas_a_pagar')
+            ->where('idcompra', '=', $idcompra)
+            ->decrement('montoapagar', $montoNota);
 
-        $detalles=DB::table('nota_credito_compra_detalle as d')
-           ->join('productos as a','d.idproducto','=','a.idproducto')
-           ->select('idnota_creditoc_detalle','a.idproducto','a.nombre as producto','d.cantidad','d.precio_compra','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.totalitems')
-           ->where('d.idnota_creditoc','=',$id) 
-           ->get();
-           return view("compras.nota_creditoc.edit",["nota_creditoc"=>$nota_creditoc,"detalles"=>$detalles]);
+        $this->normalizarEstadoCuentaPagar($idcompra);
     }
 
-    public function update(Request $request, $id)
+    private function normalizarEstadoCuentaPagar(int $idcompra): void
     {
-        // Validación adicional en el lado del servidor
-        $request->validate([
-            'precio_compra.*' => 'required|numeric|min:1', // Asegura que todos los precios_compra sean numéricos y mayores a 0
-        ]);
-        $idnota_creditoc_detalle = $request->get('idnota_creditoc_detalle');
-        $cantidad = $request->get('cantidad');
-        $precio_compra = $request->get('precio_compra');
-        $idproducto = $request->get('idproducto');
+        $cuenta = DB::table('cuentas_a_pagar')
+            ->where('idcompra', '=', $idcompra)
+            ->lockForUpdate()
+            ->first();
 
-        // return dd(['a'=>$cantidad,'b'=>$precio_compra,'c'=>$idproducto, 'd'=>$idcompra_detalle]);
-        
-        $productos = DB::table('productos as prod')
-        ->join('tipo_impuesto as ti','prod.idtipo_impuesto','=','ti.idtipo_impuesto')
-        ->select('prod.idproducto','ti.porcentaje')
-        ->whereIn('prod.idproducto',$idproducto)
-        ->get();
-        
-        // return dd(['a'=>$productos,'b'=>$precio_compra,'c'=>$idproducto, 'd'=>$idpresupuestoc_detalle]);
-       // Obtén los valores necesarios de la cabecera de la compra
-       $notacreditocCabecera = DB::table('nota_credito_compra')
-       ->where('idnota_creditoc', '=', $id)
-       ->select('idproveedor', 'idsucursal', 'fecha_vencimiento', 'fecha_factura','iddeposito','idcompra')
-       ->first();
-       
-        $idcompra = $notacreditocCabecera->idcompra;
-        $idproveedor = $notacreditocCabecera->idproveedor;
-        $idsucursal = $notacreditocCabecera->idsucursal;
-        $iddeposito = $notacreditocCabecera->iddeposito;
-        $fecha_vencimiento = $notacreditocCabecera->fecha_vencimiento;
-        $fecha_factura = $notacreditocCabecera->fecha_factura;
-               
+        if (! $cuenta) {
+            return;
+        }
 
-        $prod=0;
-        $cont = 0;
-        $items = 1;
-        $sumiva10=0;
-        $sumiva5=0;
-        $sumgravada10=0;
-        $sumgravada5=0;
-        $sumexenta=0;
-        $sumtotalitems=0;
+        $estado = (int) $cuenta->montoapagar <= 0 ? 'Pagado' : 'Pendiente';
 
-        foreach ($idnota_creditoc_detalle as $key => $value) {
-            
-            $prod= $productos->where('idproducto', '=' ,$idproducto[$value])->first();
-            // return dd($prod);
-            //  calculo de los demas campos que está en el notepad
-            $porcentaje = $prod->porcentaje;
-            $totalitems=0;
-            $totalitems= $cantidad[$value]*$precio_compra[$value];
-            // return dd(['a'=>$cantidad[$value],'b'=>$precio_compra[$value],'c'=>$totalitems]);
-                        
-            if ($porcentaje==10){
-                // Impuesto IVA 10
-
-                $imp=((100+$porcentaje)/$porcentaje);
-
-
-                // Monto Gravado del 10 % y Exento
-                $gravada5=0;
-                $m_gravada10=$totalitems;
-                $exenta=0; 
-
-
-                // IVA 10 %
-                $iva10=round($m_gravada10/$imp);
-                $iva5=0;
-
-                $gravada10 = $m_gravada10 - $iva10;
-
-                // total
-                $total= $gravada10 + $gravada5 + $exenta + $iva10 + $iva5;
-
-            }else{
-                if ($porcentaje==5) {
-                    // Impuesto IVA 5
-                    $imp=((100+$porcentaje)/$porcentaje);
-
-                    // Monto Gravado del 5 % y Exento
-                    $m_gravada5=$totalitems; 
-                    $gravada10=0;
-                    $exenta=round((($totalitems) ) - $m_gravada5); 
-
-                    // IVA 5 %
-                    $iva10=0;
-                    $iva5=round($m_gravada5/$imp);
-
-                    $gravada5 = $m_gravada5 - $iva5;
-
-                    // total
-                    $total= $gravada10 + $gravada5 + $exenta + $iva10 + $iva5;
-
-                }else{
-                    if ($porcentaje==0){
-                        // Exento
-                        
-                        // Monto Gravado y Exento
-                        $gravada10= 0;
-                        $gravada5= 0;
-                        $exenta= $totalitems;
-
-                        //iva sin IVA                                 
-                        $iva10=0;
-                        $iva5=0;
-
-                        //total
-                        $total= $gravada10 + $gravada5 + $exenta + $iva10 + $iva5;
-
-                    }
-                }
-
-            }
-            $udpdetalle=DB::table('nota_credito_compra_detalle')
-            ->where('idnota_creditoc_detalle','=',$value)
+        DB::table('cuentas_a_pagar')
+            ->where('idcompra', '=', $idcompra)
             ->update([
-                    'cantidad'=>$cantidad[$value],
-                    'precio_compra'=>$precio_compra[$value],
-                    'iva10'=>$iva10,
-                    'iva5'=>$iva5,
-                    'gravada10'=>$gravada10,
-                    'gravada5'=>$gravada5,
-                    'exenta'=>$exenta,
-                    'totalitems'=>$totalitems
-                ]);
+                'montoapagar' => max(0, (int) $cuenta->montoapagar),
+                'estado' => $estado,
+            ]);
+    }
 
-            $con_stk=DB::select("Select idstock, existencia from stock where idsucursal=".$idsucursal." and iddeposito=".$iddeposito." and idproducto=".$idproducto[$value]);
-                    
-            $existe=0; $existencia=0;
-            foreach ($con_stk as $cst) {
-                $existe=1;
-                $idstock=$cst->idstock;
-                $existencia=$cst->existencia;
-                
-            }
-            //return dd($con_stk, $existe, $idstock );
+    private function actualizarLibroCompras(int $idcompra): void
+    {
+        app(LibroComprasService::class)->recalcular($idcompra);
+    }
 
-            if ($existe == 1) {
-                // Modificar la existencia para una salida
-                if ($existencia >= $cantidad[$value]) {
-                    $salida = DB::update("UPDATE stock SET existencia = existencia - ".$cantidad[$value]." WHERE idsucursal=".$idsucursal." AND iddeposito=".$iddeposito." AND idproducto=".$idproducto[$value]." AND idstock=".$idstock);
-                } else {
-                    // No hay suficiente stock para la salida
-                    session()->flash('error', 'No hay suficiente stock para este producto.');
-                }
-            } else {
-                // No existe un registro en stock para el producto
-                session()->flash('error', 'No hay stock para este producto en la sucursal y depósito especificados.');
-            }            
-                
-            $cont=$cont+1;
-            $items++;
-
-            $sumiva10= $sumiva10 + $iva10;
-            $sumiva5= $sumiva5 + $iva5;
-            $sumgravada10= $sumgravada10 + $gravada10;
-            $sumgravada5= $sumgravada5 + $gravada5;
-            $sumexenta= $sumexenta + $exenta;
-            $sumtotalitems= $sumtotalitems + $totalitems;
-
-        } //fin foreach
-                
-        $udpcabecera=DB::table('nota_credito_compra')
-        ->where('idnota_creditoc','=',$id)
-        ->update(['totaliva10'=>$sumiva10,
-                    'totaliva5'=>$sumiva5,
-                    'totalgravada10'=>$sumgravada10,
-                    'totalgravada5'=>$sumgravada5,
-                    'totalexenta'=>$sumexenta,
-                    'totalcompra'=>$sumtotalitems                   
-                ]);
-
-        $updateCuentaPagar=DB::table('cuentas_a_pagar')
-            ->where('idcompra', $idcompra)
-            ->update(['montoapagar' => DB::raw('GREATEST(0, montoapagar - ' . (int) $sumtotalitems . ')')]);
-                
-         // Actualizar el estado en la tabla compra
-        $udpOrdenEstado = DB::table('compra')
-        ->where('idcompra', '=', $idcompra)
-        ->update(['estado' => 'F']);
-
-        return Redirect::to('compras/nota_creditoc/'.$id);
-
+    private function estadoEsCancelado(?string $estado): bool
+    {
+        return in_array(strtoupper(trim((string) $estado)), ['CANCELADO', 'CANCELADA', 'ANULADO', 'ANULADA', 'A'], true);
     }
 }

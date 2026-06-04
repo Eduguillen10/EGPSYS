@@ -35,8 +35,7 @@
             <div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
                 <div class="form-group">
                     <label for="usuario">Usuario</label>
-                    <input type="text" name="usuario" value="{{ Auth::user()->name }}" class="form-control" readonly>
-                    <input type="hidden" name="id" value="{{ Auth::user()->id }}">
+                    <input type="text" value="{{ Auth::user()->name }}" class="form-control" readonly>
                 </div>
             </div>
 

@@ -21,7 +21,7 @@ class MovimientoStockService
         float $cantidad,
         ?float $costoUnitario = null,
         ?string $observacion = null,
-        ?string $usuario = null,
+        ?int $idusuario = null,
         string $estado = 'ACTIVO'
     ): void {
         $operacion = strtoupper(trim($operacion));
@@ -47,18 +47,13 @@ class MovimientoStockService
             'cantidad' => $cantidad,
             'costo_unitario' => $costoUnitario,
             'observacion' => $observacion,
-            'usuario' => $usuario ?: $this->usuarioActual(),
+            'idusuario' => $idusuario ?: $this->usuarioActualId(),
             'estado' => $estado,
         ]);
     }
 
-    private function usuarioActual(): string
+    private function usuarioActualId(): int
     {
-        $user = Auth::user();
-
-        return $user->name
-            ?? $user->nombre
-            ?? $user->email
-            ?? 'sistema';
+        return (int) (Auth::id() ?? DB::table('users')->orderBy('id')->value('id') ?? 1);
     }
 }

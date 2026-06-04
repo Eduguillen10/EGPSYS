@@ -14,7 +14,7 @@ class AuditLog extends Model
         'event',
         'auditable_type',
         'auditable_id',
-        'user_id',
+        'idusuario',
         'old_values',
         'new_values',
         'ip_address',
@@ -39,6 +39,6 @@ class AuditLog extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'idusuario', 'id');
     }
 }

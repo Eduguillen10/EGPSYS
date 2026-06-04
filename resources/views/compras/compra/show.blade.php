@@ -115,7 +115,7 @@
 		    				<th>Gravada 10</th>
 		    				<th>Gravada 5</th>
 		    				<th>Exenta</th>
-		    				<th>Total</th>
+		    				<th>Monto</th>
 		    			</thead>
 		    			<tfoot>
 		    				<th></th>
@@ -137,10 +137,10 @@
 								<td>{{ number_format($det->gravada10, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->gravada5, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->exenta, 0, ',', '.') }}</td>
-								<td>{{ number_format($det->totalitems, 0, ',', '.') }}</td>
+								<td>{{ number_format($det->montoitems, 0, ',', '.') }}</td>
 		    				</tr>
 		    				<?php
-    							$sumcantidad= $sumcantidad + $det->totalitems;
+    							$sumcantidad= $sumcantidad + $det->montoitems;
     						?>
 		    				@endforeach
 			    				<td colspan="8">Total</td>

@@ -34,6 +34,7 @@ class CobroController extends Controller
             ->join('apertura as a', 'c.idapertura', '=', 'a.idapertura')
             ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
+            ->join('users as u', 'c.idusuario', '=', 'u.id')
             ->leftJoin('det_cobro as dc', 'c.id_cobro', '=', 'dc.id_cobro')
             ->leftJoin('ventas as v', 'dc.idventa', '=', 'v.idventa')
             ->leftJoin('cuenta_cobrar as cc', 'dc.idventa', '=', 'cc.idventa')
@@ -47,7 +48,7 @@ class CobroController extends Controller
                 'c.fecha_cobro',
                 'c.monto_cobro',
                 'c.cobro_estado',
-                'c.usuario',
+                'u.name as usuario',
                 's.descripcion as sucursal',
                 'c.idapertura',
                 'cli.nombre as cliente',
@@ -81,7 +82,7 @@ class CobroController extends Controller
                 'c.fecha_cobro',
                 'c.monto_cobro',
                 'c.cobro_estado',
-                'c.usuario',
+                'u.name',
                 's.descripcion',
                 'c.idapertura',
                 'cli.nombre',
@@ -155,7 +156,7 @@ class CobroController extends Controller
                 'idcliente' => $venta->idcliente,
                 'monto_cobro' => $monto,
                 'cobro_estado' => 'Pendiente',
-                'usuario' => $user->name,
+                'idusuario' => $user->id,
             ]);
 
             CobroDetalle::create([
@@ -181,12 +182,13 @@ class CobroController extends Controller
             ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
             ->join('cajas as ca', 'c.idcaja', '=', 'ca.idcaja')
+            ->join('users as u', 'c.idusuario', '=', 'u.id')
             ->select(
                 'c.id_cobro',
                 'c.fecha_cobro',
                 'c.monto_cobro',
                 'c.cobro_estado',
-                'c.usuario',
+                'u.name as usuario',
                 's.idsucursal',
                 's.descripcion as sucursal',
                 'cli.idcliente',
@@ -444,7 +446,7 @@ class CobroController extends Controller
             }
 
             $cobro->cobro_estado = 'Realizado';
-            $cobro->usuario = Auth::user()->name;
+            $cobro->idusuario = Auth::id();
             $cobro->save();
 
             $this->recalcularCuentaCobrarPorCobro((int) $id_cobro);
@@ -477,12 +479,13 @@ class CobroController extends Controller
             ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
             ->join('cajas as ca', 'c.idcaja', '=', 'ca.idcaja')
+            ->join('users as u', 'c.idusuario', '=', 'u.id')
             ->select(
                 'c.id_cobro',
                 'c.fecha_cobro',
                 'c.monto_cobro',
                 'c.cobro_estado',
-                'c.usuario',
+                'u.name as usuario',
                 'c.hash_documento',
                 'c.hash_anulacion',
                 'c.hash_version',
@@ -544,12 +547,13 @@ class CobroController extends Controller
             ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
             ->join('cajas as ca', 'c.idcaja', '=', 'ca.idcaja')
+            ->join('users as u', 'c.idusuario', '=', 'u.id')
             ->select(
                 'c.id_cobro',
                 'c.fecha_cobro',
                 'c.monto_cobro',
                 'c.cobro_estado',
-                'c.usuario',
+                'u.name as usuario',
                 'c.hash_documento',
                 'c.hash_anulacion',
                 'c.hash_version',
@@ -647,7 +651,7 @@ class CobroController extends Controller
             }
 
             $cobro->cobro_estado = 'Anulado';
-            $cobro->usuario = Auth::user()->name;
+            $cobro->idusuario = Auth::id();
             $cobro->hash_anulacion = app(LegalDocumentHashService::class)
                 ->hashAnulacion('COBRO', (int) $cobro->id_cobro, request('motivo_anulacion'), Auth::user()->name ?? null);
             $cobro->save();
@@ -861,7 +865,7 @@ class CobroController extends Controller
             if ($pendiente) {
                 $cobroPendiente = Cobro::findOrFail($pendiente->id_cobro);
                 $cobroPendiente->cobro_estado = 'Anulado';
-                $cobroPendiente->usuario = Auth::user()->name;
+                $cobroPendiente->idusuario = Auth::id();
                 $cobroPendiente->save();
             }
 
@@ -871,7 +875,7 @@ class CobroController extends Controller
         if ($pendiente) {
             $cobroPendiente = Cobro::findOrFail($pendiente->id_cobro);
             $cobroPendiente->monto_cobro = $saldo;
-            $cobroPendiente->usuario = Auth::user()->name;
+            $cobroPendiente->idusuario = Auth::id();
             $cobroPendiente->save();
 
             $detallePendiente = CobroDetalle::findOrFail($pendiente->id_detcobro);
@@ -889,7 +893,7 @@ class CobroController extends Controller
             'idcliente'    => $venta->idcliente,
             'monto_cobro'  => $saldo,
             'cobro_estado' => 'Pendiente',
-            'usuario'      => Auth::user()->name,
+            'idusuario'    => Auth::id(),
         ]);
 
         CobroDetalle::create([

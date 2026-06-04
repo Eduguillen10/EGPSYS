@@ -28,6 +28,6 @@ class NotaCreditocDetalle extends Model
         'gravada10',
         'gravada5',
         'exenta',
-        'totalitems'
+        'montoitems'
     ];
 }

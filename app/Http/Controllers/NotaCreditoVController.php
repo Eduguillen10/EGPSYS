@@ -50,7 +50,8 @@ class NotaCreditoVController extends Controller
                 ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
                 ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito')
                 ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
-                ->select('c.idnota_creditov', 'c.nro_nota_credito', 'c.idventa', 'c.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalventa', 'c.timbrado', 'c.condicion', 'c.concepto', 'c.nro_factura', 'c.estado', 'c.fecha_factura', 'c.fecha_vencimiento')
+                ->join('users as u', 'c.idusuario', '=', 'u.id')
+                ->select('c.idnota_creditov', 'c.nro_nota_credito', 'c.idventa', 'u.name as usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalventa', 'c.timbrado', 'c.condicion', 'c.concepto', 'c.nro_factura', 'c.estado', 'c.fecha_factura', 'c.fecha_vencimiento')
                 ->where('c.idnota_creditov', 'LIKE', '%' . $query . '%')
                 ->Where('cli.nombre', 'LIKE', '%' . $query2 . '%')
                 ->Where('c.fecha_registro', 'LIKE', '%' . $query3 . '%')
@@ -77,7 +78,8 @@ class NotaCreditoVController extends Controller
             ->join('clientes as cli', 'v.idcliente', '=', 'cli.idcliente')
             ->join('depositos as dep', 'v.iddeposito', '=', 'dep.iddeposito')
             ->join('timbrado as t', 'v.idtimbrado', '=', 't.idtimbrado')
-            ->select('v.idventa', 'v.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'v.fecha', 'v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 't.idtimbrado', 't.nro_timbrado', 'v.condicion', 'v.obs', 'v.nro_factura', 'v.estado')
+            ->join('users as u', 'v.idusuario', '=', 'u.id')
+            ->select('v.idventa', 'u.name as usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'v.fecha', 'v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 't.idtimbrado', 't.nro_timbrado', 'v.condicion', 'v.obs', 'v.nro_factura', 'v.estado')
             ->where('v.idsucursal', '=', $suc)
             ->whereIn('v.estado', ['Realizado', 'R'])
             ->get();
@@ -163,7 +165,7 @@ class NotaCreditoVController extends Controller
             $nota_creditov->idventa = $request->get('idventa');
             $nota_creditov->idsucursal = $request->get('idsucursal');
             $nota_creditov->iddeposito = $request->get('iddeposito');
-            $nota_creditov->usuario = $request->get('usuario');
+            $nota_creditov->idusuario = Auth::id();
             $nota_creditov->nro_factura = $request->get('nro_factura');
             //$nota_creditov->condicion=$request->get('condicion');   *****************************************  ver esto             
             $nota_creditov->concepto = $request->get('concepto');
@@ -599,7 +601,8 @@ class NotaCreditoVController extends Controller
             ->join('sucursales as s', 'c.idsucursal', '=', 's.idsucursal')
             ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito')
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
-            ->select('c.idnota_creditov', 'c.nro_nota_credito', 'c.idventa', 'c.usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalventa', 'c.timbrado', 'c.condicion', 'c.concepto', 'c.nro_factura', 'c.estado', 'c.fecha_factura')
+            ->join('users as u', 'c.idusuario', '=', 'u.id')
+            ->select('c.idnota_creditov', 'c.nro_nota_credito', 'c.idventa', 'u.name as usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalventa', 'c.timbrado', 'c.condicion', 'c.concepto', 'c.nro_factura', 'c.estado', 'c.fecha_factura')
             ->where('c.idnota_creditov', '=', $id)
             ->orderBy('c.idnota_creditov', 'desc')
             ->first();
@@ -1003,11 +1006,12 @@ class NotaCreditoVController extends Controller
             ->join('depositos as dep', 'c.iddeposito', '=', 'dep.iddeposito')
             ->join('clientes as cli', 'c.idcliente', '=', 'cli.idcliente')
             ->leftJoin('ventas as v', 'c.idventa', '=', 'v.idventa')
+            ->join('users as u', 'c.idusuario', '=', 'u.id')
             ->select(
                 'c.idnota_creditov',
                 'c.nro_nota_credito',
                 'c.idventa',
-                'c.usuario',
+                'u.name as usuario',
                 's.idsucursal',
                 's.descripcion as sucursal',
                 'dep.iddeposito',
@@ -1190,7 +1194,7 @@ class NotaCreditoVController extends Controller
             if ($pendiente) {
                 $cobroPendiente = Cobro::findOrFail($pendiente->id_cobro);
                 $cobroPendiente->cobro_estado = 'Anulado';
-                $cobroPendiente->usuario = Auth::user()->name;
+                $cobroPendiente->idusuario = Auth::id();
                 $cobroPendiente->save();
             }
 
@@ -1200,7 +1204,7 @@ class NotaCreditoVController extends Controller
         if ($pendiente) {
             $cobroPendiente = Cobro::findOrFail($pendiente->id_cobro);
             $cobroPendiente->monto_cobro = $saldo;
-            $cobroPendiente->usuario = Auth::user()->name;
+            $cobroPendiente->idusuario = Auth::id();
             $cobroPendiente->save();
 
             $detallePendiente = CobroDetalle::findOrFail($pendiente->id_detcobro);
@@ -1228,7 +1232,7 @@ class NotaCreditoVController extends Controller
             'idcliente' => $idcliente,
             'monto_cobro' => $saldo,
             'cobro_estado' => 'Pendiente',
-            'usuario' => Auth::user()->name,
+            'idusuario' => Auth::id(),
         ]);
 
         CobroDetalle::create([
@@ -1285,7 +1289,7 @@ class NotaCreditoVController extends Controller
             'fecha_cobro' => $fecha,
             'monto_cobro' => $montoNeg,
             'cobro_estado' => 'Realizado', // NO lo pongas "Anulado" porque el arqueo lo ignora
-            'usuario' => $user->name,
+            'idusuario' => $user->id,
             'idcliente' => (int) $idcliente,
         ]);
         $idCobroDev = $cobroDevolucion->id_cobro;
@@ -1359,7 +1363,7 @@ class NotaCreditoVController extends Controller
             'fecha_cobro' => $fecha,
             'monto_cobro' => $montoPos,
             'cobro_estado' => 'Realizado',
-            'usuario' => $user->name,
+            'idusuario' => $user->id,
             'idcliente' => (int) $idcliente,
         ]);
         $idCobroIng = $cobroIngreso->id_cobro;

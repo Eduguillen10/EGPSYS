@@ -22,7 +22,7 @@ class LegalDocumentHashService
                 'idventa', 'idsucursal', 'iddeposito', 'idtimbrado', 'idcliente',
                 'fecha', 'nro_factura', 'condicion', 'totaliva10', 'totaliva5',
                 'totalgravada10', 'totalgravada5', 'totalexenta', 'totalventa',
-                'saldo_factura', 'estado', 'usuario',
+                'saldo_factura', 'estado', 'idusuario',
             ]),
             'detalles' => $this->rows($detalles, [
                 'items', 'idproducto', 'cantidad', 'precio_venta', 'iva10', 'iva5',
@@ -47,7 +47,7 @@ class LegalDocumentHashService
             'tipo' => 'COBRO',
             'cabecera' => $this->only($cobro, [
                 'id_cobro', 'idsucursal', 'idcliente', 'idcaja', 'idapertura',
-                'fecha_cobro', 'monto_cobro', 'cobro_estado', 'usuario',
+                'fecha_cobro', 'monto_cobro', 'cobro_estado', 'idusuario',
             ]),
             'facturas' => $this->rows($detalles, [
                 'items', 'idventa', 'monto_detcobro',
@@ -85,13 +85,13 @@ class LegalDocumentHashService
             'fecha_emision', 'fecha_inicio_traslado', 'fecha_fin_traslado',
             'motivo_traslado', 'punto_partida', 'ciudad_partida',
             'departamento_partida', 'punto_llegada', 'ciudad_llegada',
-            'departamento_llegada', 'estado', 'usuario', 'observacion',
+            'departamento_llegada', 'estado', 'idusuario', 'observacion',
         ];
 
         if ($recepcion) {
             $campos = array_merge($campos, [
                 'recibido_por', 'documento_receptor', 'fecha_entrega',
-                'hora_entrega', 'observacion_entrega', 'usuario_recepcion',
+                'hora_entrega', 'observacion_entrega', 'idusuario_recepcion',
                 'recepcion_registrada_at',
             ]);
         }
@@ -123,7 +123,7 @@ class LegalDocumentHashService
                 'idaceptacion_credito', 'idventa', 'idcliente', 'metodo_aceptacion',
                 'recibido_por', 'documento_receptor', 'telefono_receptor',
                 'relacion_receptor', 'monto', 'condicion', 'fecha_vencimiento',
-                'texto_aceptado', 'archivo_nombre_original', 'estado', 'usuario',
+                'texto_aceptado', 'archivo_nombre_original', 'estado', 'idusuario',
                 'observacion',
             ]),
             'archivo_sha256' => $archivoHash,
@@ -160,7 +160,7 @@ class LegalDocumentHashService
                 'num_documento', 'nro_nota_credito', 'nro_nota_debito', 'nro_factura', 'condicion', 'fecha_registro',
                 'concepto', 'totaliva10', 'totaliva5', 'totalgravada10',
                 'totalgravada5', 'totalexenta', 'totalventa', 'estado',
-                'timbrado', 'usuario', 'fecha_factura', 'fecha_vencimiento',
+                'timbrado', 'idusuario', 'fecha_factura', 'fecha_vencimiento',
             ]),
             'detalles' => $this->rows($detalles, [
                 'items', 'idproducto', 'cantidad', 'precio_venta', 'iva10', 'iva5',

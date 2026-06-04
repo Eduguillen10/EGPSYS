@@ -35,7 +35,7 @@ class Ventas extends Model
         'saldo_factura',
         'condicion',
         'estado',
-        'usuario',
+        'idusuario',
         'hash_documento',
         'hash_anulacion',
         'hash_version',

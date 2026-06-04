@@ -16,12 +16,12 @@ class OrdenCompras extends Model
 
     protected $fillable = [
         'idsucursal',
+        'idusuario',
         'idpresupuestocompra',
         'idproveedor',
         'iddeposito',
         'fecha',
         'estado',
-        'usuario',
         'ruc',
         'direccion',
         'observacion',

@@ -12,7 +12,7 @@
 		</div>
 		<div class="col-lg-2 col-md-2 col-sm-2 col-xs-12">
 			<div class="form-group">
-				<input type="text" class="form-control" name="searchText4" placeholder="Sucural..." value="{{$searchText4}}">
+				<input type="text" class="form-control" name="searchText4" placeholder="Sucursal..." value="{{$searchText4}}">
 			</div>
 		</div>
 		<div class="col-lg-2 col-md-2 col-sm-2 col-xs-12">
@@ -25,6 +25,11 @@
 				<input type="text" class="form-control" name="searchText6" placeholder="RUC..." value="{{$searchText6}}">
 			</div>
 		</div>	
+		<div class="col-lg-1 col-md-1 col-sm-1 col-xs-12">
+			<div class="form-group">
+				<input type="text" class="form-control" name="searchText7" placeholder="Estado..." value="{{$searchText7}}">
+			</div>
+		</div>
    		<div class="col-lg-2 col-md-2 col-sm-2 col-xs-12">
 			<div class="form-group">
 				<div class="input-group">

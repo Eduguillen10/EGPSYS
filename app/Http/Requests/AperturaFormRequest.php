@@ -26,9 +26,7 @@ class AperturaFormRequest extends FormRequest
             'fecha_cierre' => 'nullable|date|after_or_equal:fecha_apertura',
             'estado' => 'nullable',
             'idcaja' => 'required|integer|exists:cajas,idcaja',
-            'id' => 'required|integer|exists:users,id',
             'idsucursal' => 'required|integer|exists:sucursales,idsucursal',
-            'usuario' => 'required|string|max:100',
             'idtipoarqueo' => 'integer',
 
             // Validaciones para los detalles de la apertura
@@ -52,9 +50,7 @@ class AperturaFormRequest extends FormRequest
             'estado.required' => 'El estado es obligatorio.',
             'estado.in' => 'El estado debe ser "Abierto" o "Cerrado".',
             'idcaja.exists' => 'La caja seleccionada no es válida.',
-            'id.exists' => 'El usuario no existe.',
             'idsucursal.exists' => 'La sucursal no es válida.',
-            'usuario.required' => 'El usuario es obligatorio.',
             'detalles.*.id_formacobro.exists' => 'La forma de cobro no es válida.',
         ];
     }
