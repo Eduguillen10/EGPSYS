@@ -109,6 +109,21 @@ class NotaRemisionCompraController extends Controller
             )
             ->where('oc.idsucursal', '=', $suc)
             ->whereNotIn('oc.estado', ['Cancelado', 'Anulado', 'Anulada', 'A'])
+            ->whereExists(function ($subquery): void {
+                $subquery->select(DB::raw(1))
+                    ->from('orden_detalle as od')
+                    ->whereColumn('od.idordencompra', 'oc.idordencompra')
+                    ->whereRaw(
+                        "od.cantidad > COALESCE((
+                            SELECT SUM(nrd.cantidad)
+                            FROM nota_remision_compra_detalle as nrd
+                            INNER JOIN nota_remision_compra as nr ON nrd.idremisionc = nr.idremisionc
+                            WHERE nr.idordencompra = oc.idordencompra
+                              AND nrd.idorden_detalle = od.idorden_detalle
+                              AND nr.estado NOT IN ('Cancelado', 'Anulado', 'Anulada', 'A')
+                        ), 0)"
+                    );
+            })
             ->orderByDesc('oc.idordencompra')
             ->get();
 
@@ -125,6 +140,11 @@ class NotaRemisionCompraController extends Controller
             }
 
             $detalles = $this->obtenerDetallesPendientes($ordenSeleccionada);
+
+            if ($detalles->isEmpty()) {
+                return Redirect::to('compras/nota_remision/create')
+                    ->with('error', 'La orden seleccionada no posee productos pendientes de remision.');
+            }
         }
 
         return view('compras.nota_remision.create', compact('fecha', 'ordenes', 'orden', 'detalles', 'sucursal'));
@@ -148,14 +168,19 @@ class NotaRemisionCompraController extends Controller
             $existeComprobante = DB::table('nota_remision_compra')
                 ->where('idproveedor', '=', $orden->idproveedor)
                 ->where('nro_comprobante', '=', $request->input('nro_comprobante'))
+                ->whereNotIn('estado', ['Cancelado', 'Anulado', 'Anulada', 'A'])
                 ->exists();
 
             if ($existeComprobante) {
-                throw new \RuntimeException('Ya existe una nota de remision con ese comprobante para el proveedor.');
+                throw new \RuntimeException('Ya existe una nota de remision activa con ese comprobante para el proveedor.');
             }
 
             $detallesOrden = $this->obtenerDetallesPendientes((int) $orden->idordencompra)
                 ->keyBy('idorden_detalle');
+
+            if ($detallesOrden->isEmpty()) {
+                throw new \RuntimeException('La orden seleccionada no posee productos pendientes de remision.');
+            }
 
             $remision = NotaRemisionCompra::create([
                 'idordencompra' => $orden->idordencompra,
@@ -305,6 +330,7 @@ class NotaRemisionCompraController extends Controller
                 DB::raw('(od.cantidad - COALESCE(rem.cantidad_remitida, 0)) as cantidad_pendiente')
             )
             ->where('od.idordencompra', '=', $idordencompra)
+            ->whereRaw('(od.cantidad - COALESCE(rem.cantidad_remitida, 0)) > 0')
             ->orderBy('od.items')
             ->get();
     }

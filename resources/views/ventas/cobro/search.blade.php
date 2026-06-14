@@ -2,7 +2,7 @@
     <div class="row g-3">
         <div class="col-lg-1 col-md-4 col-sm-6 col-12">
             <div class="form-group">
-                <input type="text" class="form-control" name="searchText" placeholder="ID..." value="{{ request('searchText') }}">
+                <input type="text" class="form-control" name="searchText" placeholder="ID / Recibo..." value="{{ request('searchText') }}">
             </div>
         </div>
 

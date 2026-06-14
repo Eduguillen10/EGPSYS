@@ -1,18 +1,50 @@
 @extends('layouts.admin')
 
 @section('contenido')
-<div class="row">
+<style>
+    .compra-create-header {
+        margin-bottom: 18px;
+    }
+
+    .compra-create-panel {
+        border: 1px solid #d9e2ec;
+        border-radius: 4px;
+        background: #fff;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .06);
+    }
+
+    .compra-create-action {
+        border: 1px solid #b7d8ee;
+        border-left: 4px solid #3f8fc9;
+        border-radius: 4px;
+        background: #f8fcff;
+        padding: 16px;
+    }
+
+    .compra-create-action h4 {
+        margin-top: 0;
+        color: #2c3e50;
+        font-weight: 700;
+    }
+
+    .compra-create-actions {
+        padding-top: 8px;
+    }
+
+    .bootstrap-select.nota-debito-producto-select .dropdown-menu.inner,
+    .nota-debito-producto-select + .bootstrap-select .dropdown-menu.inner {
+        max-height: 240px !important;
+        overflow-y: auto !important;
+    }
+</style>
+
+@include('compras.partials.create-styles')
+
+<div class="row compra-create-header">
     <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12">
-        <h3>Nueva Nota de Debito de Compra
-            <a href="" data-target="#modal-elegir" data-toggle="modal">
-                <button class="btn btn-info" type="button">
-                    <i class="fa fa-search"></i> Seleccionar Compra
-                </button>
-            </a>
-            <a href="{{ route('nota_debitoc.index') }}">
-                <button class="btn btn-light" type="button"><i class="fa fa-arrow-left"></i> Volver</button>
-            </a>
-        </h3>
+        <h3>Nueva Nota de Debito de Compra</h3>
 
         @if ($errors->any())
             <div class="alert alert-danger">
@@ -32,6 +64,52 @@
 
 @include('compras.nota_debitoc.modalelegir')
 
+<div class="compra-create-panel">
+    <div class="row">
+        <div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
+            <div class="form-group">
+                <label>Sucursal</label>
+                <input type="text" class="form-control" value="{{ $sucursal->descripcion ?? ($compra->sucursal ?? 'Sin sucursal seleccionada') }}" readonly>
+            </div>
+        </div>
+        <div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
+            <div class="form-group">
+                <label>Usuario</label>
+                <input type="text" class="form-control" value="{{ Auth::user()->name }}" readonly>
+            </div>
+        </div>
+        <div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
+            <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" class="form-control" value="{{ $fecha ?? date('Y-m-d') }}" readonly>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="compra-create-panel">
+    <div class="compra-create-action">
+        <div class="row">
+            <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
+                <h4>Compra asociada</h4>
+                @if($compra)
+                    <p>Compra #{{ $compra->idcompra }} - Factura {{ $compra->nro_factura }} - {{ $compra->proveedor }}</p>
+                @else
+                    <p>Seleccione la compra para cargar el comprobante.</p>
+                @endif
+            </div>
+            <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 text-right compra-create-actions">
+                <a href="" data-target="#modal-elegir" data-toggle="modal" class="btn btn-info">
+                    <i class="fa fa-search"></i> Seleccionar Compra
+                </a>
+                <a href="{{ route('nota_debitoc.index') }}" class="btn btn-default">
+                    <i class="fa fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 @if($compra)
     <form action="{{ route('nota_debitoc.store') }}" method="POST" autocomplete="off">
         @csrf
@@ -44,20 +122,8 @@
                     <div class="panel-body">
                         <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
                             <div class="form-group">
-                                <label>Sucursal</label>
-                                <input type="text" class="form-control" value="{{ $compra->sucursal }}" readonly>
-                            </div>
-                        </div>
-                        <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
-                            <div class="form-group">
                                 <label>Deposito</label>
                                 <input type="text" class="form-control" value="{{ $compra->deposito }}" readonly>
-                            </div>
-                        </div>
-                        <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
-                            <div class="form-group">
-                                <label>Usuario</label>
-                                <input type="text" class="form-control" value="{{ Auth::user()->name }}" readonly>
                             </div>
                         </div>
                         <div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
@@ -142,7 +208,7 @@
                         <div class="col-lg-6 col-sm-6 col-md-6 col-xs-12">
                             <div class="form-group">
                                 <label>Producto</label>
-                                <select id="pidproducto" class="form-control selectpicker" data-live-search="true">
+                                <select id="pidproducto" class="form-control selectpicker nota-debito-producto-select" data-live-search="true" data-size="8" data-container="body">
                                     @foreach($detalles as $detalle)
                                         <option value="{{ $detalle->idproducto }}"
                                             data-producto="{{ $detalle->producto }}"
@@ -177,7 +243,7 @@
 
                         <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12">
                             <table id="detalles" class="table table-striped table-bordered table-condensed table-hover">
-                                <thead style="background-color:#A9D0F5">
+                                <thead>
                                     <tr>
                                         <th>Opciones</th>
                                         <th>Producto</th>
@@ -200,7 +266,7 @@
                             <div class="form-group">
                                 <button class="btn btn-primary" type="submit">Guardar</button>
                                 <button class="btn btn-danger" type="reset">Cancelar</button>
-                                <a href="{{ route('nota_debitoc.index') }}" class="btn btn-light">
+                                <a href="{{ route('nota_debitoc.index') }}" class="btn btn-default">
                                     <i class="fa fa-arrow-left"></i> Volver
                                 </a>
                             </div>

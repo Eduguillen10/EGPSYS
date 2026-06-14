@@ -32,7 +32,7 @@
     <div class="col-lg-12">
         <div class="panel panel-default">
             <div class="panel-heading">Datos de emision no editables</div>
-            <div class="panel-body">
+            <div class="panel-body tm-detail-row">
                 <div class="col-lg-2"><label>Nro. Remision</label><p>{{ $remision->nro_remision ?? '-' }}</p></div>
                 <div class="col-lg-2"><label>Venta</label><p>{{ $ventaLabel }}</p></div>
                 <div class="col-lg-2"><label>Comprobante</label><p>{{ $comprobanteLabel }}</p></div>

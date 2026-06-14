@@ -444,8 +444,9 @@ public function show($id)
             $idcabpresupuesto = $inscab;
 
             // vas a traer mediante un get() el detalle de los pedidos 
-            $pedidos_compras_detalle=DB::table('pedidos_compras_detalle as pcd')        
-            ->select('pcd.idpedidocompra_detalle', 'pcd.idpedidocompra', 'pcd.items','pcd.idproducto','pcd.cantidad')
+            $pedidos_compras_detalle=DB::table('pedidos_compras_detalle as pcd')
+            ->join('productos as pr', 'pcd.idproducto', '=', 'pr.idproducto')
+            ->select('pcd.idpedidocompra_detalle', 'pcd.idpedidocompra', 'pcd.items','pcd.idproducto','pcd.cantidad', 'pr.precio_compra')
             ->where('pcd.idpedidocompra', '=', $idpedidocompra)
             ->get();
 
@@ -456,7 +457,7 @@ public function show($id)
                 'items' => $detalle->items,
                 'idproducto' => $detalle->idproducto,
                 'cantidad' => $detalle->cantidad,
-                'precio' => 0 // Inicializar con precio 0
+                'precio' => $detalle->precio_compra ?? 0
             ]);
         }
             // Redirigir al formulario de edición del presupuesto
@@ -475,7 +476,15 @@ public function show($id)
 
     $detalles = PresupuestosComprasDetalle::join('productos as pr', 'presupuestos_compras_detalle.idproducto', '=', 'pr.idproducto')
         ->join('marcas as m', 'pr.idmarca', '=', 'm.idmarca')
-        ->select('presupuestos_compras_detalle.idpresupuestocompra_detalle', 'pr.idproducto', 'pr.descripcion as producto', 'presupuestos_compras_detalle.cantidad', 'presupuestos_compras_detalle.precio', 'presupuestos_compras_detalle.items','m.descripcion AS marcas')
+        ->select(
+            'presupuestos_compras_detalle.idpresupuestocompra_detalle',
+            'pr.idproducto',
+            'pr.descripcion as producto',
+            'presupuestos_compras_detalle.cantidad',
+            DB::raw('CASE WHEN presupuestos_compras_detalle.precio > 0 THEN presupuestos_compras_detalle.precio ELSE COALESCE(pr.precio_compra, 0) END as precio'),
+            'presupuestos_compras_detalle.items',
+            'm.descripcion AS marcas'
+        )
         ->where('presupuestos_compras_detalle.idpresupuestocompra', '=', $id)
         ->get();
 

@@ -26,7 +26,9 @@ class Cobro extends Model
     protected $fillable=[
         
         'idapertura',
+        'nro_recibo',
         'fecha_cobro',
+        'fecha_recibo',
         'monto_cobro',
         'cobro_estado',
         'idusuario',

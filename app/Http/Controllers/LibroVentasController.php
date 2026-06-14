@@ -37,7 +37,7 @@ class LibroVentasController extends Controller
         $libroventas = DB::table('ventas as v')
         ->join('clientes as c', 'v.idcliente', '=', 'c.idcliente')
         ->join('timbrado as tim', 'v.idtimbrado', '=', 'tim.idtimbrado')
-        ->select('v.idventa','c.idcliente','c.nombre as cliente','c.num_documento','v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 'tim.idtimbrado','tim.nro_timbrado as timbrado', 'v.nro_factura','v.fecha')
+        ->select('v.idventa','c.idcliente','c.nombre as cliente','c.num_documento','v.montoiva10', 'v.montoiva5', 'v.montogravada10', 'v.montogravada5', 'v.montoexenta', 'v.montoventa', 'tim.idtimbrado','tim.nro_timbrado as timbrado', 'v.nro_factura','v.fecha')
         ->whereDate('v.fecha', '>=' , $fechaDesde)
         ->whereDate('v.fecha', '<=' , $fechaHasta)
         ->whereNotIn('v.estado', ['Anulado', 'Anulada', 'A', 'Cancelado', 'Cancelada'])

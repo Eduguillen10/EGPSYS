@@ -45,6 +45,8 @@ class CobroController extends Controller
             })
             ->select(
                 'c.id_cobro',
+                'c.nro_recibo',
+                'c.fecha_recibo',
                 'c.fecha_cobro',
                 'c.monto_cobro',
                 'c.cobro_estado',
@@ -58,7 +60,12 @@ class CobroController extends Controller
                 DB::raw('MAX(cc.saldo) as saldo_cuenta'),
                 DB::raw('MAX(cc.fecha_vencimiento) as fecha_vencimiento_cuenta')
             )
-            ->when($q1, fn($x) => $x->where('c.id_cobro', 'LIKE', "%$q1%"))
+            ->when($q1, function ($x) use ($q1) {
+                $x->where(function ($sub) use ($q1) {
+                    $sub->where('c.id_cobro', 'LIKE', "%$q1%")
+                        ->orWhere('c.nro_recibo', 'LIKE', "%$q1%");
+                });
+            })
             ->when($q2, fn($x) => $x->whereDate('c.fecha_cobro', $q2))
             ->when($q3, fn($x) => $x->where('c.cobro_estado', 'LIKE', "%$q3%"))
             ->when($q4, fn($x) => $x->where('s.descripcion', 'LIKE', "%$q4%"))
@@ -79,6 +86,8 @@ class CobroController extends Controller
             })
             ->groupBy(
                 'c.id_cobro',
+                'c.nro_recibo',
+                'c.fecha_recibo',
                 'c.fecha_cobro',
                 'c.monto_cobro',
                 'c.cobro_estado',
@@ -126,13 +135,13 @@ class CobroController extends Controller
             return redirect()->back()->with('error', 'No hay una apertura de caja ABIERTA en tu sucursal. Abrí caja primero.');
         }
 
-        // Si existe cuenta a cobrar, cobrás el saldo (no el totalventa)
+        // Si existe cuenta a cobrar, cobrás el saldo (no el montoventa)
         $cta = DB::table('cuenta_cobrar')->where('idventa', $venta->idventa)->first();
         if ($cta && (int) $cta->saldo <= 0) {
             return redirect()->back()->with('error', 'Esta factura ya está saldada.');
         }
 
-        $monto = $cta ? (int) $cta->saldo : (int) $venta->totalventa;
+        $monto = $cta ? (int) $cta->saldo : (int) $venta->montoventa;
 
         $pendiente = DB::table('det_cobro as dc')
         ->join('cobros as c','dc.id_cobro','=','c.id_cobro')
@@ -213,7 +222,7 @@ class CobroController extends Controller
 
         $cobrodetalle = DB::table('det_cobro as d')
             ->join('ventas as v', 'd.idventa', '=', 'v.idventa')
-            ->select('d.id_detcobro', 'd.id_cobro', 'd.items', 'd.monto_detcobro', 'v.idventa', 'v.nro_factura', 'v.condicion', 'v.totalventa')
+            ->select('d.id_detcobro', 'd.id_cobro', 'd.items', 'd.monto_detcobro', 'v.idventa', 'v.nro_factura', 'v.condicion', 'v.montoventa')
             ->where('d.id_cobro', $id)
             ->orderBy('d.items')
             ->get();
@@ -447,6 +456,7 @@ class CobroController extends Controller
 
             $cobro->cobro_estado = 'Realizado';
             $cobro->idusuario = Auth::id();
+            $this->asignarReciboSiCorresponde($cobro);
             $cobro->save();
 
             $this->recalcularCuentaCobrarPorCobro((int) $id_cobro);
@@ -482,6 +492,8 @@ class CobroController extends Controller
             ->join('users as u', 'c.idusuario', '=', 'u.id')
             ->select(
                 'c.id_cobro',
+                'c.nro_recibo',
+                'c.fecha_recibo',
                 'c.fecha_cobro',
                 'c.monto_cobro',
                 'c.cobro_estado',
@@ -504,7 +516,7 @@ class CobroController extends Controller
 
         $cobrodetalle = DB::table('det_cobro as d')
             ->join('ventas as v', 'd.idventa', '=', 'v.idventa')
-            ->select('d.items', 'd.monto_detcobro', 'v.idventa', 'v.nro_factura', 'v.condicion', 'v.totalventa')
+            ->select('d.items', 'd.monto_detcobro', 'v.idventa', 'v.nro_factura', 'v.condicion', 'v.montoventa')
             ->where('d.id_cobro', $id)
             ->orderBy('d.items')
             ->get();
@@ -550,6 +562,8 @@ class CobroController extends Controller
             ->join('users as u', 'c.idusuario', '=', 'u.id')
             ->select(
                 'c.id_cobro',
+                'c.nro_recibo',
+                'c.fecha_recibo',
                 'c.fecha_cobro',
                 'c.monto_cobro',
                 'c.cobro_estado',
@@ -583,7 +597,7 @@ class CobroController extends Controller
                 'v.idventa',
                 'v.nro_factura',
                 'v.condicion',
-                'v.totalventa',
+                'v.montoventa',
                 'cc.importe',
                 'cc.monto_pago',
                 'cc.saldo',
@@ -782,7 +796,7 @@ class CobroController extends Controller
                 throw new \Exception("No existe cuenta a cobrar para la venta {$idventa}.");
             }
 
-            $importe = $this->importeVentaAjustado((int) $idventa, (int) $venta->totalventa);
+            $importe = $this->importeVentaAjustado((int) $idventa, (int) $venta->montoventa);
             //Evita que por error el monto pagado supere el importe.
             $pagadoReal = min($pagadoReal, $importe);
             $saldo = max(0, $importe - $pagadoReal);
@@ -902,6 +916,62 @@ class CobroController extends Controller
             'idventa'        => $idventa,
             'monto_detcobro' => $saldo,
         ]);
+    }
+
+    private function asignarReciboSiCorresponde(Cobro $cobro): void
+    {
+        if ($cobro->cobro_estado !== 'Realizado' || ! empty($cobro->nro_recibo) || (int) $cobro->monto_cobro <= 0) {
+            return;
+        }
+
+        if ($this->cobroEsNotaCredito((int) $cobro->id_cobro)) {
+            return;
+        }
+
+        $numeroRecibo = $this->generarNumeroRecibo((int) $cobro->idsucursal, (int) $cobro->id_cobro);
+        $this->validarReciboDisponible((int) $cobro->idsucursal, $numeroRecibo, (int) $cobro->id_cobro);
+
+        $cobro->nro_recibo = $numeroRecibo;
+        $cobro->fecha_recibo = now()->toDateString();
+    }
+
+    private function generarNumeroRecibo(int $idsucursal, int $idCobro): string
+    {
+        return $this->serieRecibo($idsucursal)
+            . '-'
+            . str_pad((string) $idCobro, 7, '0', STR_PAD_LEFT);
+    }
+
+    private function serieRecibo(int $idsucursal): string
+    {
+        $serie = DB::table('timbrado')
+            ->where('idsucursal', $idsucursal)
+            ->where('estado', 'Activo')
+            ->whereDate('fecha_vencimiento', '>=', now()->toDateString())
+            ->orderByDesc('idtimbrado')
+            ->value('nro_serie');
+
+        if (! $serie) {
+            $serie = DB::table('timbrado')
+                ->where('idsucursal', $idsucursal)
+                ->orderByDesc('idtimbrado')
+                ->value('nro_serie');
+        }
+
+        return $serie ?: str_pad((string) $idsucursal, 3, '0', STR_PAD_LEFT) . '-001';
+    }
+
+    private function validarReciboDisponible(int $idsucursal, string $numeroRecibo, int $idActual): void
+    {
+        $existe = DB::table('cobros')
+            ->where('idsucursal', $idsucursal)
+            ->where('nro_recibo', $numeroRecibo)
+            ->where('id_cobro', '<>', $idActual)
+            ->exists();
+
+        if ($existe) {
+            throw new \RuntimeException('Ya existe un recibo emitido con ese numero en la sucursal. No se puede reutilizar.');
+        }
     }
 
     private function cobroEsNotaCredito(int $idCobro): bool

@@ -79,7 +79,7 @@ class NotaCreditoVController extends Controller
             ->join('depositos as dep', 'v.iddeposito', '=', 'dep.iddeposito')
             ->join('timbrado as t', 'v.idtimbrado', '=', 't.idtimbrado')
             ->join('users as u', 'v.idusuario', '=', 'u.id')
-            ->select('v.idventa', 'u.name as usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'v.fecha', 'v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 't.idtimbrado', 't.nro_timbrado', 'v.condicion', 'v.obs', 'v.nro_factura', 'v.estado')
+            ->select('v.idventa', 'u.name as usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'cli.idcliente', 'cli.nombre as cliente', 'cli.num_documento', 'v.fecha', 'v.montoiva10', 'v.montoiva5', 'v.montogravada10', 'v.montogravada5', 'v.montoexenta', 'v.montoventa', 't.idtimbrado', 't.nro_timbrado', 'v.condicion', 'v.obs', 'v.nro_factura', 'v.estado')
             ->where('v.idsucursal', '=', $suc)
             ->whereIn('v.estado', ['Realizado', 'R'])
             ->get();
@@ -186,7 +186,9 @@ class NotaCreditoVController extends Controller
             //return dd($nota_creditov);
 
             $nota_creditov->save();
-            $nota_creditov->nro_nota_credito = $this->generarNumeroNota($nota_creditov->idnota_creditov, $timbradoActivo->nro_serie);
+            $numeroNota = $this->generarNumeroNota($nota_creditov->idnota_creditov, $timbradoActivo->nro_serie);
+            $this->validarNumeroDisponible($nota_creditov->timbrado, $numeroNota, (int) $nota_creditov->idnota_creditov);
+            $nota_creditov->nro_nota_credito = $numeroNota;
             $nota_creditov->save();
 
             $idproducto = $request->get('idproducto');
@@ -1082,6 +1084,19 @@ class NotaCreditoVController extends Controller
         return $serie . '-' . str_pad((string) $idnota, 7, '0', STR_PAD_LEFT);
     }
 
+    private function validarNumeroDisponible(string $timbrado, string $numero, int $idActual): void
+    {
+        $existe = DB::table('nota_credito_venta')
+            ->where('timbrado', $timbrado)
+            ->where('nro_nota_credito', $numero)
+            ->where('idnota_creditov', '<>', $idActual)
+            ->exists();
+
+        if ($existe) {
+            throw new \RuntimeException('Ya existe una nota de credito de venta emitida con este timbrado y numero. No se puede reutilizar.');
+        }
+    }
+
     private function proximoIdTabla(string $tabla, string $pk): int
     {
         return ((int) DB::table($tabla)->max($pk)) + 1;
@@ -1113,7 +1128,7 @@ class NotaCreditoVController extends Controller
     private function recalcularDeudaVenta(int $idventa): void
     {
         $venta = Ventas::where('idventa', $idventa)->lockForUpdate()->firstOrFail();
-        $importe = $this->importeVentaAjustado($idventa, (int) $venta->totalventa);
+        $importe = $this->importeVentaAjustado($idventa, (int) $venta->montoventa);
 
         $pagadoReal = $this->pagadoRealVenta($idventa);
 

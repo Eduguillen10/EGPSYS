@@ -1,6 +1,6 @@
 @extends ('layouts.admin')
 @section ('contenido')
-	<div class="row">
+	<div class="row tm-detail-row">
 		<div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
 			<div class="form-group">
 					<label for="presupuesto">Nro Presupuesto</label>
@@ -31,13 +31,13 @@
 					<p>{{$presupuesto->idpedidocompra}}</p>
 			</div>
     	</div>  	
-    	<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
+    	<div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
 			<div class="form-group">
 					<label for="emplado">Usuario</label>
 					<p>{{$presupuesto->usuario}}</p>
 			</div>
     	</div>
-    	<div class="col-lg-4 col-sm-4 col-md-4 col-xs-12">
+    	<div class="col-lg-12 col-sm-12 col-md-12 col-xs-12 tm-detail-full">
 			<div class="form-group">
 				<label for="observacion">Observacion</label>
 				<p>{{ $presupuesto->idpedidocompra != null ? $presupuesto->observacion_pedido : '' }}</p>
@@ -75,7 +75,7 @@
 		    				@foreach($detalles as $det)
 		    				<tr>
 		    					<td>{{$det->producto}}</td>
-		    					<td>{{ number_format($det->cantidad, 0, ',', '.') }}</td>
+		    					<td>{{ \App\Helpers\NumberFormatter::cantidad($det->cantidad) }}</td>
 								<td>{{ number_format($det->precio, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->iva10, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->iva5, 0, ',', '.') }}</td>

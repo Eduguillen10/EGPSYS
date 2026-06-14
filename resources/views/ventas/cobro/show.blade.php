@@ -17,10 +17,14 @@
 
             <div class="row">
                 <div class="col-lg-2">
-                    <label>Fecha</label>
-                    <input class="form-control" value="{{ \Carbon\Carbon::parse($cobros->fecha_cobro)->format('d/m/Y') }}" readonly>
+                    <label>Nro. Recibo</label>
+                    <input class="form-control" value="{{ $cobros->nro_recibo ?: 'Pendiente de emision' }}" readonly>
                 </div>
-                <div class="col-lg-3">
+                <div class="col-lg-2">
+                    <label>Fecha</label>
+                    <input class="form-control" value="{{ \Carbon\Carbon::parse($cobros->fecha_recibo ?: $cobros->fecha_cobro)->format('d/m/Y') }}" readonly>
+                </div>
+                <div class="col-lg-2">
                     <label>Caja</label>
                     <input class="form-control" value="{{ $cobros->caja }}" readonly>
                 </div>
@@ -28,7 +32,7 @@
                     <label>Apertura</label>
                     <input class="form-control" value="{{ $cobros->idapertura }}" readonly>
                 </div>
-                <div class="col-lg-3">
+                <div class="col-lg-2">
                     <label>Sucursal</label>
                     <input class="form-control" value="{{ $cobros->sucursal }}" readonly>
                 </div>
@@ -87,7 +91,7 @@
                         <td>{{ $co->items }}</td>
                         <td>{{ $co->nro_factura }}</td>
                         <td>{{ $co->condicion }}</td>
-                        <td style="text-align:right;">{{ number_format($co->totalventa, 0, ',', '.') }}</td>
+                        <td style="text-align:right;">{{ number_format($co->montoventa, 0, ',', '.') }}</td>
                         <td style="text-align:right;">{{ number_format($co->monto_detcobro, 0, ',', '.') }}</td>
                         <td style="text-align:center;">
                             @if($cobros->cobro_estado == 'Realizado')

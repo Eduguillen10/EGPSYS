@@ -23,7 +23,7 @@
 	<div class="row" style="padding-right: 1em; padding-left: 1em;">
 		<div class="panel panel-primary">
 			<div class="panel-body">
-				<div class="row">
+				<div class="row tm-detail-row">
 					<!-- Número de Apertura -->
 					<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
 						<div class="form-group">
@@ -61,7 +61,7 @@
 					</div>
 				</div><!-- fin row -->
 
-				<div class="row">
+				<div class="row tm-detail-row">
 					<!-- Monto Inicial -->
 					<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
 						<div class="form-group">

@@ -22,7 +22,7 @@
 					<td>{{ $stk->sucursal}}</td>
 					<td>{{ $stk->deposito}}</td>
 					<td>{{ $stk->producto}}</td>					
-					<td>{{ $stk->cantidad}}</td>					
+					<td>{{ \App\Helpers\NumberFormatter::cantidad($stk->cantidad) }}</td>					
 				</tr>
 				
 				@endforeach

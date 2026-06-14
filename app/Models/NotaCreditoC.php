@@ -24,7 +24,7 @@ class NotaCreditoC extends Model
         'idproveedor',
         'ruc',        
         'nro_factura',
-        'condicion',
+        'timbrado',
         'fecha_registro',
         'fecha_factura',
         'fecha_vencimiento',

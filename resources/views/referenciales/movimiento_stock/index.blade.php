@@ -74,7 +74,7 @@
                                     <span class="label label-danger">SALIDA</span>
                                 @endif
                             </td>
-                            <td>{{ number_format((float) $movimiento->cantidad, 3, ',', '.') }}</td>
+                            <td>{{ \App\Helpers\NumberFormatter::cantidad($movimiento->cantidad) }}</td>
                             <td>{{ $movimiento->costo_unitario !== null ? number_format((float) $movimiento->costo_unitario, 2, ',', '.') : '-' }}</td>
                             <td>{{ $movimiento->usuario }}</td>
                             <td>{{ $movimiento->estado }}</td>

@@ -1,6 +1,6 @@
 @extends ('layouts.admin')
 @section ('contenido')
-	<div class="row">
+	<div class="row tm-detail-row">
 	<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
 			<div class="form-group">
 					<label for="compra">Nro. Compra</label>
@@ -92,7 +92,7 @@
 					<p>{{$estado}}</p>
 			</div>
     	</div>
-    	<div class="col-lg-4 col-sm-4 col-md-4 col-xs-12">
+    	<div class="col-lg-12 col-sm-12 col-md-12 col-xs-12 tm-detail-full">
     		<div class="form-group">
 					<label for="concepto">concepto</label>
 					<p>{{$compra->concepto}}</p>
@@ -130,7 +130,7 @@
 		    				@foreach($detalles as $det)
 		    				<tr>
 		    					<td>{{$det->producto}}</td>
-		    					<td>{{ number_format($det->cantidad, 0, ',', '.') }}</td>
+		    					<td>{{ \App\Helpers\NumberFormatter::cantidad($det->cantidad) }}</td>
 								<td>{{ number_format($det->precio_compra, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->iva10, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->iva5, 0, ',', '.') }}</td>

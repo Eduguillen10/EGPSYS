@@ -21,7 +21,7 @@
     <div class="col-lg-12">
         <div class="panel panel-primary">
             <div class="panel-heading">Datos legales del traslado</div>
-            <div class="panel-body">
+            <div class="panel-body tm-detail-row">
                 <div class="col-lg-2"><label>Nro. Remision</label><p>{{ $remision->nro_remision ?? '-' }}</p></div>
                 <div class="col-lg-2"><label>Timbrado</label><p>{{ $remision->nro_timbrado_remision ?? '-' }}</p></div>
                 <div class="col-lg-2"><label>Venta</label><p>{{ $ventaLabel }}</p></div>
@@ -54,7 +54,7 @@
     <div class="col-lg-12">
         <div class="panel panel-primary">
             <div class="panel-heading">Transporte y recepcion</div>
-            <div class="panel-body">
+            <div class="panel-body tm-detail-row">
                 <div class="col-lg-3"><label>Transportista</label><p>{{ $remision->transportista_nombre ?? '-' }}</p></div>
                 <div class="col-lg-3"><label>Doc. transportista</label><p>{{ $remision->transportista_documento ?? '-' }}</p></div>
                 <div class="col-lg-6"><label>Direccion transportista</label><p>{{ $remision->transportista_direccion ?? '-' }}</p></div>
@@ -100,7 +100,7 @@
                 <tr>
                     <td>{{ $detalle->items }}</td>
                     <td>{{ $detalle->descripcion }}</td>
-                    <td>{{ number_format($detalle->cantidad, 3, ',', '.') }}</td>
+                    <td>{{ \App\Helpers\NumberFormatter::cantidad($detalle->cantidad) }}</td>
                 </tr>
             @endforeach
         </tbody>

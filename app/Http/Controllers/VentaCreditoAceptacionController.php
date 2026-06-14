@@ -65,7 +65,7 @@ class VentaCreditoAceptacionController extends Controller
             $venta->idcliente,
             $request->input('recibido_por'),
             $request->input('documento_receptor'),
-            (int) $venta->totalventa,
+            (int) $venta->montoventa,
             $venta->condicion,
             $cuenta?->fecha_vencimiento,
             $textoAceptado,
@@ -80,7 +80,7 @@ class VentaCreditoAceptacionController extends Controller
             'documento_receptor' => $request->input('documento_receptor'),
             'telefono_receptor' => $request->input('telefono_receptor'),
             'relacion_receptor' => $request->input('relacion_receptor'),
-            'monto' => (int) $venta->totalventa,
+            'monto' => (int) $venta->montoventa,
             'condicion' => $venta->condicion,
             'fecha_vencimiento' => $cuenta?->fecha_vencimiento,
             'texto_aceptado' => $textoAceptado,
@@ -220,7 +220,7 @@ class VentaCreditoAceptacionController extends Controller
         return 'Declaro haber recibido conforme los bienes y/o servicios detallados en la factura Nro. '
             . $venta->nro_factura
             . ', reconozco la deuda por Gs. '
-            . number_format((int) $venta->totalventa, 0, ',', '.')
+            . number_format((int) $venta->montoventa, 0, ',', '.')
             . ' y me comprometo a pagarla al vencimiento '
             . $fechaVencimiento
             . '.';

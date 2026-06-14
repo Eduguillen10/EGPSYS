@@ -59,7 +59,7 @@
 						@endif
 					</td>
 					<td>@include('ventas.partials.estado', ['estado' => $ven->estado])</td>
-					<td>{{ number_format($ven->totalventa, 0, ',', '.')}}</td>					
+					<td>{{ number_format($ven->montoventa, 0, ',', '.')}}</td>					
 					<td>
 						<a href="{{URL('ventas/venta/'.$ven->idventa)}}"><button class="btn btn-primary">Detalles</button></a>
 						@if($esCredito && (int) $ven->credito_aceptado === 0 && !$ventaAnulada)

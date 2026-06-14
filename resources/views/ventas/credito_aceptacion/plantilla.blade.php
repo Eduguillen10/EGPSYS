@@ -94,7 +94,7 @@
             <div class="amount-banner">
                 <div>
                     <div class="label">Monto comprometido</div>
-                    <div class="amount">Gs. {{ number_format($venta->totalventa, 0, ',', '.') }}</div>
+                    <div class="amount">Gs. {{ number_format($venta->montoventa, 0, ',', '.') }}</div>
                 </div>
             </div>
 
@@ -129,7 +129,7 @@
                         </div>
                         <div class="grand-total">
                             <div class="label">Total</div>
-                            <div class="value">{{ number_format($venta->totalventa, 0, ',', '.') }}</div>
+                            <div class="value">{{ number_format($venta->montoventa, 0, ',', '.') }}</div>
                         </div>
                     </div>
                 </div>

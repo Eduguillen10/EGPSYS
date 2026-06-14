@@ -20,13 +20,13 @@ class LegalDocumentHashService
             'tipo' => 'VENTA',
             'cabecera' => $this->only($venta, [
                 'idventa', 'idsucursal', 'iddeposito', 'idtimbrado', 'idcliente',
-                'fecha', 'nro_factura', 'condicion', 'totaliva10', 'totaliva5',
-                'totalgravada10', 'totalgravada5', 'totalexenta', 'totalventa',
+                'fecha', 'nro_factura', 'condicion', 'montoiva10', 'montoiva5',
+                'montogravada10', 'montogravada5', 'montoexenta', 'montoventa',
                 'saldo_factura', 'estado', 'idusuario',
             ]),
             'detalles' => $this->rows($detalles, [
                 'items', 'idproducto', 'cantidad', 'precio_venta', 'iva10', 'iva5',
-                'gravada10', 'gravada5', 'exenta', 'totalitems',
+                'gravada10', 'gravada5', 'exenta', 'montoitems',
             ]),
         ]);
     }
@@ -47,7 +47,8 @@ class LegalDocumentHashService
             'tipo' => 'COBRO',
             'cabecera' => $this->only($cobro, [
                 'id_cobro', 'idsucursal', 'idcliente', 'idcaja', 'idapertura',
-                'fecha_cobro', 'monto_cobro', 'cobro_estado', 'idusuario',
+                'nro_recibo', 'fecha_cobro', 'fecha_recibo', 'monto_cobro',
+                'cobro_estado', 'idusuario',
             ]),
             'facturas' => $this->rows($detalles, [
                 'items', 'idventa', 'monto_detcobro',

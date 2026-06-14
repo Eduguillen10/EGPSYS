@@ -59,7 +59,7 @@ class Clientes extends Model
          // Si no tiene asignación manual, calcular según las ventas.
         $totalVentas = DB::table('ventas')
             ->where('idcliente', $this->idcliente)
-            ->sum('totalventa');
+            ->sum('montoventa');
 
         if ($totalVentas > 100000000) {
             return 'Platino';

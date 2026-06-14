@@ -1,6 +1,6 @@
 @extends ('layouts.admin')
 @section ('contenido')
-	<div class="row">
+	<div class="row tm-detail-row">
 		<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
     		<div class="form-group">
     			<label>Nro. del pedido</label>
@@ -32,8 +32,8 @@
 			</div>
     	</div>  
     </div>
-    <div class="row"> 
-    	<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
+    <div class="row tm-detail-row"> 
+    	<div class="col-lg-12 col-sm-12 col-md-12 col-xs-12 tm-detail-full">
 			<div class="form-group">
 					<label for="observacion">Observacion</label>
 					<p>{{$pedidos_compras->observacion}}</p>
@@ -60,7 +60,7 @@
     					<td>{{$pd->items}}</td>
     					<td>{{$pd->idproducto}}</td>
     					<td>{{$pd->producto}}</td>
-    					<td>{{$pd->cantidad}}</td>
+    					<td>{{ \App\Helpers\NumberFormatter::cantidad($pd->cantidad) }}</td>
     					
     				</tr>
     				<?php
@@ -69,7 +69,7 @@
     				@endforeach
     				<tr>
     					<td colspan="3">Cantidad</td>
-    					<th>{{$sumcantidad}}</th>
+    					<th>{{ \App\Helpers\NumberFormatter::cantidad($sumcantidad) }}</th>
     				</tr>
     			</tbody>
 

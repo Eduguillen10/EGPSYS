@@ -115,7 +115,7 @@
             const isManualCheckbox = document.getElementById('is_manual');
 
             // Simulación de datos de ventas (esto se calcula en el backend realmente)
-            let totalVentas = {{ optional($cliente->ventas)->sum('totalventa') ?? 0 }};
+            let totalVentas = {{ optional($cliente->ventas)->sum('montoventa') ?? 0 }};
 
             function actualizarClasificacion() {
                 if (!isManualCheckbox.checked) {

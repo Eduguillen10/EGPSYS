@@ -23,7 +23,7 @@
         <div class="panel panel-primary">
             <div class="panel-body">
 
-                <div class="row">
+                <div class="row tm-detail-row">
                     <div class="col-lg-2">
                         <label>Fecha</label>
                         <input type="text" class="form-control"
@@ -47,7 +47,7 @@
                     </div>
                 </div>
 
-                <div class="row" style="margin-top:10px;">
+                <div class="row tm-detail-row" style="margin-top:10px;">
                     <div class="col-lg-6">
                         <label>Cliente</label>
                         <input type="text" class="form-control"
@@ -101,7 +101,7 @@
                                     <td>{{ $co->items }}</td>
                                     <td>{{ $co->nro_factura }}</td>
                                     <td>{{ $co->condicion }}</td>
-                                    <td style="text-align:right;">{{ number_format($co->totalventa, 0, ',', '.') }}</td>
+                                    <td style="text-align:right;">{{ number_format($co->montoventa, 0, ',', '.') }}</td>
                                     <td style="text-align:right;">{{ number_format($co->monto_detcobro, 0, ',', '.') }}</td>
                                     <td style="text-align:center;">
                                         <form

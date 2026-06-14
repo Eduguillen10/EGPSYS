@@ -25,12 +25,12 @@ class Libroventas extends Model
         'nro_factura',
         'fecha_factura',
         'timbrado',
-        'totaliva10',
-        'totaliva5',
-        'totalgravada10',
-        'totalgravada5',
-        'totalexenta',
-        'totalventa'        
+        'montoiva10',
+        'montoiva5',
+        'montogravada10',
+        'montogravada5',
+        'montoexenta',
+        'montoventa'        
     ];
 
     protected $guarded=[

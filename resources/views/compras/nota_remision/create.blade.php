@@ -16,7 +16,27 @@
         font-weight: 700;
         color: #2c3e50;
     }
+
+    .remision-action {
+        border: 1px solid #b7d8ee;
+        border-left: 4px solid #3f8fc9;
+        border-radius: 4px;
+        background: #f8fcff;
+        padding: 16px;
+    }
+
+    .remision-action h4 {
+        margin-top: 0;
+        color: #2c3e50;
+        font-weight: 700;
+    }
+
+    .remision-actions {
+        padding-top: 25px;
+    }
 </style>
+
+@include('compras.partials.create-styles')
 
 <div class="row">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
@@ -39,32 +59,56 @@
 </div>
 
 <div class="remision-panel">
-    {!! Form::open(['route' => 'nota_remision_compra.create', 'method' => 'GET']) !!}
     <div class="row">
-        <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
+        <div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
             <div class="form-group">
-                <label>Orden de compra a remitir</label>
-                <select name="orden" class="form-control selectpicker" data-live-search="true" required>
-                    <option value="">Seleccione una orden...</option>
-                    @foreach($ordenes as $ord)
-                        <option value="{{ $ord->idordencompra }}" {{ $orden && $orden->idordencompra == $ord->idordencompra ? 'selected' : '' }}>
-                            Orden #{{ $ord->idordencompra }} - {{ date('d/m/Y', strtotime($ord->fecha)) }} - {{ $ord->razonsocial }} - {{ $ord->deposito }} - {{ $ord->estado }}
-                        </option>
-                    @endforeach
-                </select>
+                <label>Sucursal</label>
+                <input type="text" class="form-control" value="{{ $sucursal->descripcion ?? 'Sin sucursal seleccionada' }}" readonly>
             </div>
         </div>
-        <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
-            <label>&nbsp;</label><br>
-            <button type="submit" class="btn btn-info">
-                <i class="fa fa-download"></i> Cargar Orden
-            </button>
-            <a href="{{ route('nota_remision_compra.index') }}" class="btn btn-default">
-                <i class="fa fa-arrow-left"></i> Volver
-            </a>
+        <div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
+            <div class="form-group">
+                <label>Usuario</label>
+                <input type="text" class="form-control" value="{{ Auth::user()->name }}" readonly>
+            </div>
+        </div>
+        <div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
+            <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" class="form-control" value="{{ $fecha }}" readonly>
+            </div>
         </div>
     </div>
-    {{ Form::close() }}
+</div>
+
+<div class="remision-panel">
+    <div class="remision-action">
+        {!! Form::open(['route' => 'nota_remision_compra.create', 'method' => 'GET']) !!}
+        <div class="row">
+            <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
+                <div class="form-group">
+                    <label>Orden de compra a remitir</label>
+                    <select name="orden" class="form-control selectpicker" data-live-search="true" required>
+                        <option value="">Seleccione una orden...</option>
+                        @foreach($ordenes as $ord)
+                            <option value="{{ $ord->idordencompra }}" {{ $orden && $orden->idordencompra == $ord->idordencompra ? 'selected' : '' }}>
+                                Orden #{{ $ord->idordencompra }} - {{ date('d/m/Y', strtotime($ord->fecha)) }} - {{ $ord->razonsocial }} - {{ $ord->deposito }} - {{ $ord->estado }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 text-right remision-actions">
+                <button type="submit" class="btn btn-info">
+                    <i class="fa fa-search"></i> Seleccionar Orden
+                </button>
+                <a href="{{ route('nota_remision_compra.index') }}" class="btn btn-default">
+                    <i class="fa fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+        {{ Form::close() }}
+    </div>
 </div>
 
 @if($orden)
@@ -74,24 +118,6 @@
     <div class="remision-panel">
         <h4 class="remision-panel-title">Datos de la orden</h4>
         <div class="row">
-            <div class="col-lg-2 col-md-3 col-sm-4 col-xs-12">
-                <div class="form-group">
-                    <label>Sucursal</label>
-                    <input type="text" class="form-control" value="{{ $orden->sucursal }}" readonly>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-3 col-sm-4 col-xs-12">
-                <div class="form-group">
-                    <label>Usuario</label>
-                    <input type="text" class="form-control" value="{{ Auth::user()->name }}" readonly>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-3 col-sm-4 col-xs-12">
-                <div class="form-group">
-                    <label>Fecha</label>
-                    <input type="date" class="form-control" value="{{ $fecha }}" readonly>
-                </div>
-            </div>
             <div class="col-lg-2 col-md-3 col-sm-4 col-xs-12">
                 <div class="form-group">
                     <label>Orden</label>
@@ -206,8 +232,8 @@
                             </td>
                             <td>{{ $det->items }}</td>
                             <td>{{ $det->producto }}</td>
-                            <td>{{ number_format($det->cantidad, 0, ',', '.') }}</td>
-                            <td>{{ number_format($det->cantidad_pendiente, 3, ',', '.') }}</td>
+                            <td>{{ \App\Helpers\NumberFormatter::cantidad($det->cantidad) }}</td>
+                            <td>{{ \App\Helpers\NumberFormatter::cantidad($det->cantidad_pendiente) }}</td>
                             <td>
                                 <input type="hidden" name="idorden_detalle[]" value="{{ $det->idorden_detalle }}" {{ $habilitado ? '' : 'disabled' }}>
                                 <input type="hidden" name="idproducto[]" value="{{ $det->idproducto }}" {{ $habilitado ? '' : 'disabled' }}>

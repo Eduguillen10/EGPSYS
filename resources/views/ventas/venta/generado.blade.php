@@ -797,14 +797,14 @@
                 <tr>
                   <td>{{ $detalle->items }}</td>
                   <td>{{ $detalle->producto }}</td>
-                  <td>{{ $detalle->cantidad }}</td>
+                  <td>{{ \App\Helpers\NumberFormatter::cantidad($detalle->cantidad) }}</td>
                   <td>{{ number_format( $detalle->precio_venta, 0, ',', '.') }}</td>
                   <td>{{ number_format($detalle->iva10, 0, ',', '.') }}</td>
                   <td>{{ number_format($detalle->iva5, 0, ',', '.') }}</td>
                   <td>{{ number_format($detalle->gravada10, 0, ',', '.') }}</td>
                   <td>{{ number_format($detalle->gravada5, 0, ',', '.') }}</td>
                   <td>{{ number_format($detalle->exenta, 0, ',', '.') }}</td>
-                  <td>{{ number_format($detalle->totalitems, 0, ',', '.') }}</td>
+                  <td>{{ number_format($detalle->montoitems, 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
               </tbody>
@@ -834,32 +834,32 @@
             <div class="sum-body">
               <div class="sum-row">
                 <div class="label">Subtotal</div>
-                <div class="value">{{ number_format($venta->totalventa, 0, ',', '.') }}</div>
+                <div class="value">{{ number_format($venta->montoventa, 0, ',', '.') }}</div>
               </div>
               <div class="sum-row">
                 <div class="label">IVA (10%)</div>
-                <div class="value">{{ number_format($venta->totaliva10, 0, ',', '.') }}</div>
+                <div class="value">{{ number_format($venta->montoiva10, 0, ',', '.') }}</div>
               </div>
               <div class="sum-row">
                 <div class="label">IVA (5%)</div>
-                <div class="value">{{ number_format($venta->totaliva5, 0, ',', '.') }}</div>
+                <div class="value">{{ number_format($venta->montoiva5, 0, ',', '.') }}</div>
               </div>
               <div class="sum-row">
                 <div class="label">Gravada (10%)</div>
-                <div class="value">{{ number_format($venta->totalgravada10, 0, ',', '.') }}</div>
+                <div class="value">{{ number_format($venta->montogravada10, 0, ',', '.') }}</div>
               </div>
               <div class="sum-row">
                 <div class="label">Gravada (5%)</div>
-                <div class="value">{{ number_format($venta->totalgravada5, 0, ',', '.') }}</div>
+                <div class="value">{{ number_format($venta->montogravada5, 0, ',', '.') }}</div>
               </div>
               <div class="sum-row">
                 <div class="label">Exenta</div>
-                <div class="value">{{ number_format($venta->totalexenta, 0, ',', '.') }}</div>
+                <div class="value">{{ number_format($venta->montoexenta, 0, ',', '.') }}</div>
               </div>
 
               <div class="grand-total">
                 <div class="label">Total</div>
-                <div class="value">{{ number_format($venta->totalventa, 0, ',', '.') }}</div>
+                <div class="value">{{ number_format($venta->montoventa, 0, ',', '.') }}</div>
               </div>
             </div>
           </div>

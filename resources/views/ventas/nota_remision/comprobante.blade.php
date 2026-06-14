@@ -140,7 +140,7 @@
                                 <tr>
                                     <td>{{ $detalle->items }}</td>
                                     <td>{{ $detalle->descripcion }}</td>
-                                    <td class="right">{{ number_format($detalle->cantidad, 3, ',', '.') }}</td>
+                                    <td class="right">{{ \App\Helpers\NumberFormatter::cantidad($detalle->cantidad) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

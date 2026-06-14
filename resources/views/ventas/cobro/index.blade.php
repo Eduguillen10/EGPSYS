@@ -25,6 +25,7 @@
             <table class="table table-striped table-bordered table-condensed table-hover">
                 <thead>
                     <th>ID</th>
+                    <th>Recibo</th>
                     <th>Fecha</th>
                     <th>Sucursal</th>
                     <th>Apertura</th>
@@ -39,7 +40,8 @@
                 @foreach ($cobros as $cob)
                 <tr>
                     <td>{{ $cob->id_cobro }}</td>
-                    <td>{{ \Carbon\Carbon::parse($cob->fecha_cobro)->format('d/m/Y') }}</td>
+                    <td>{{ $cob->nro_recibo ?: '-' }}</td>
+                    <td>{{ \Carbon\Carbon::parse($cob->fecha_recibo ?: $cob->fecha_cobro)->format('d/m/Y') }}</td>
                     <td>{{ $cob->sucursal }}</td>
                     <td>{{ $cob->idapertura }}</td>
                     <td>{{ $cob->cliente }}</td>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recibo de Cobro #{{ $cobros->id_cobro }}</title>
+    <title>Recibo de Cobro {{ $cobros->nro_recibo ?: '#' . $cobros->id_cobro }}</title>
 
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
@@ -735,7 +735,7 @@
     $condicionGeneral = '-';
 
     foreach($cobrodetalle as $det){
-        $totalFactura += (int) $det->totalventa;
+        $totalFactura += (int) $det->montoventa;
         $saldoActual += (int) ($det->saldo ?? 0);
         $condicionGeneral = $det->condicion ?? $condicionGeneral;
     }
@@ -756,8 +756,8 @@
                         </div>
 
                         <div class="submeta">
-                            <span class="chip"><span>Recibo:</span> <b>#{{ $cobros->id_cobro }}</b></span>
-                            <span class="chip"><span>Fecha:</span> <b>{{ \Carbon\Carbon::parse($cobros->fecha_cobro)->format('d/m/Y') }}</b></span>
+                            <span class="chip"><span>Recibo:</span> <b>{{ $cobros->nro_recibo ?: '#' . $cobros->id_cobro }}</b></span>
+                            <span class="chip"><span>Fecha:</span> <b>{{ \Carbon\Carbon::parse($cobros->fecha_recibo ?: $cobros->fecha_cobro)->format('d/m/Y') }}</b></span>
                             @php
                                 $estadoCobro = trim((string) $cobros->cobro_estado);
                                 $estadoCobro = ['R' => 'Realizado', 'P' => 'Pendiente', 'A' => 'Anulado'][strtoupper($estadoCobro)] ?? $estadoCobro;
@@ -866,7 +866,7 @@
                                     <td>{{ $det->items }}</td>
                                     <td>{{ $det->nro_factura }}</td>
                                     <td>{{ $det->condicion }}</td>
-                                    <td class="right">{{ number_format($det->totalventa, 0, ',', '.') }}</td>
+                                    <td class="right">{{ number_format($det->montoventa, 0, ',', '.') }}</td>
                                     <td class="right">{{ number_format($det->monto_detcobro, 0, ',', '.') }}</td>
                                     <td class="right">{{ number_format($det->saldo ?? 0, 0, ',', '.') }}</td>
                                     <td class="center">

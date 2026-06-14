@@ -14,6 +14,7 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('lineicons/style.css') }}">
     <link href="{{ asset('css/style.css') }}" rel="stylesheet">
     <link href="{{ asset('css/style-responsive.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/tm-palette.css') }}" rel="stylesheet">
 
     <style>
         .menu-search-box {

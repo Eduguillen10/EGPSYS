@@ -56,21 +56,21 @@
                         <td>{{ $lv->num_documento}}</td>
                         <td>{{ $lv->cliente}}</td>
                         <td>{{ $lv->num_documento}}</td>
-                        <td align="right">{{ number_format($lv->totalgravada10, 0, ',', '.')}}</td>					
-                        <td align="right">{{ number_format($lv->totalgravada5, 0, ',', '.')}}</td>
-                        <td align="right">{{ number_format($lv->totaliva10, 0, ',', '.')}}</td>
-                        <td align="right">{{ number_format($lv->totaliva5, 0, ',', '.')}}</td>
-                        <td align="right">{{ number_format($lv->totalexenta, 0, ',', '.')}}</td>					
-                        <td align="right">{{ number_format($lv->totalventa, 0, ',', '.')}}</td>
+                        <td align="right">{{ number_format($lv->montogravada10, 0, ',', '.')}}</td>					
+                        <td align="right">{{ number_format($lv->montogravada5, 0, ',', '.')}}</td>
+                        <td align="right">{{ number_format($lv->montoiva10, 0, ',', '.')}}</td>
+                        <td align="right">{{ number_format($lv->montoiva5, 0, ',', '.')}}</td>
+                        <td align="right">{{ number_format($lv->montoexenta, 0, ',', '.')}}</td>					
+                        <td align="right">{{ number_format($lv->montoventa, 0, ',', '.')}}</td>
                     </tr>
                     <!-- Aca hacer el sumador  -->
                     @php
-                        $totalGravada10 += $lv->totalgravada10;
-                        $totalGravada5 += $lv->totalgravada5;
-                        $totalIVA10 += $lv->totaliva10;
-                        $totalIVA5 += $lv->totaliva5;
-                        $totalExenta += $lv->totalexenta;
-                        $totalventa += $lv->totalventa;
+                        $totalGravada10 += $lv->montogravada10;
+                        $totalGravada5 += $lv->montogravada5;
+                        $totalIVA10 += $lv->montoiva10;
+                        $totalIVA5 += $lv->montoiva5;
+                        $totalExenta += $lv->montoexenta;
+                        $totalventa += $lv->montoventa;
                         $totalventa_lv = $totalventa;
                     @endphp
 				@endforeach

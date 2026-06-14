@@ -276,8 +276,11 @@ class NotaRemisionVentaController extends Controller
 
                 $this->aplicarStockTraslado($remision, $detalles);
 
+                $numeroRemision = $this->generarNumeroRemision($remision->idnota_remision_venta, $timbrado->nro_serie);
+                $this->validarNumeroDisponible((int) $timbrado->idtimbrado, $numeroRemision, (int) $remision->idnota_remision_venta);
+
                 $remision->forceFill([
-                    'nro_remision' => $this->generarNumeroRemision($remision->idnota_remision_venta, $timbrado->nro_serie),
+                    'nro_remision' => $numeroRemision,
                 ]);
 
                 $remision->forceFill([
@@ -822,6 +825,19 @@ class NotaRemisionVentaController extends Controller
         $serie = $serie ?: '001-001';
 
         return $serie . '-' . str_pad((string) $idremision, 7, '0', STR_PAD_LEFT);
+    }
+
+    private function validarNumeroDisponible(int $idtimbrado, string $numero, int $idActual): void
+    {
+        $existe = DB::table('nota_remision_venta')
+            ->where('idtimbrado', $idtimbrado)
+            ->where('nro_remision', $numero)
+            ->where('idnota_remision_venta', '<>', $idActual)
+            ->exists();
+
+        if ($existe) {
+            throw new \RuntimeException('Ya existe una nota de remision de venta emitida con este timbrado y numero. No se puede reutilizar.');
+        }
     }
 
     private function proximoIdTabla(string $tabla, string $pk): int

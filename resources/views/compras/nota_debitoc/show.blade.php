@@ -19,7 +19,7 @@
     <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12">
         <div class="panel panel-primary">
             <div class="panel-heading">Datos del comprobante</div>
-            <div class="panel-body">
+            <div class="panel-body tm-detail-row">
                 <div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
                     <div class="form-group">
                         <label>Nro. Nota Debito</label>
@@ -93,7 +93,7 @@
                         <p>{{ $nota_debitoc->mueve_stock ? 'Entrada' : 'No mueve' }}</p>
                     </div>
                 </div>
-                <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12">
+                <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12 tm-detail-full">
                     <div class="form-group">
                         <label>Concepto</label>
                         <p>{{ $nota_debitoc->concepto }}</p>
@@ -130,7 +130,7 @@
                                 @php($total += (int) $det->montoitems)
                                 <tr>
                                     <td>{{ $det->producto }}</td>
-                                    <td>{{ number_format($det->cantidad, 0, ',', '.') }}</td>
+                                    <td>{{ \App\Helpers\NumberFormatter::cantidad($det->cantidad) }}</td>
                                     <td>{{ number_format($det->precio_compra, 0, ',', '.') }}</td>
                                     <td>{{ number_format($det->iva10, 0, ',', '.') }}</td>
                                     <td>{{ number_format($det->iva5, 0, ',', '.') }}</td>

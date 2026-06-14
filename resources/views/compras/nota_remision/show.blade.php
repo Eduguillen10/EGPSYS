@@ -14,7 +14,7 @@
     </div>
 </div>
 
-<div class="row">
+<div class="row tm-detail-row">
     <div class="col-lg-2 col-sm-3 col-md-3 col-xs-12">
         <div class="form-group">
             <label>Nro. Nota</label>
@@ -111,7 +111,7 @@
             <p>{{ $remision->chapa ?: '-' }}</p>
         </div>
     </div>
-    <div class="col-lg-4 col-sm-6 col-md-6 col-xs-12">
+    <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12 tm-detail-full">
         <div class="form-group">
             <label>Observacion</label>
             <p>{{ $remision->observacion ?: '-' }}</p>
@@ -137,8 +137,8 @@
                                 <tr>
                                     <td>{{ $det->items }}</td>
                                     <td>{{ $det->producto }}</td>
-                                    <td>{{ number_format($det->cantidad_orden, 0, ',', '.') }}</td>
-                                    <td>{{ number_format($det->cantidad, 3, ',', '.') }}</td>
+                                    <td>{{ \App\Helpers\NumberFormatter::cantidad($det->cantidad_orden) }}</td>
+                                    <td>{{ \App\Helpers\NumberFormatter::cantidad($det->cantidad) }}</td>
                                     <td>{{ number_format($det->precio_compra, 0, ',', '.') }}</td>
                                 </tr>
                             @endforeach

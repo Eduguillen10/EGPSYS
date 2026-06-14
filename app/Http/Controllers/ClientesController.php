@@ -20,7 +20,7 @@ class ClientesController extends Controller
 
         // SUBQUERY: total ventas por cliente (ignora anuladas)
         $ventasSub = DB::table('ventas')
-            ->select('idcliente', DB::raw('SUM(totalventa) as total_ventas'))
+            ->select('idcliente', DB::raw('SUM(montoventa) as total_ventas'))
             ->whereNotIn('estado', ['A', 'Anulado', 'Anulada', 'Cancelado', 'Cancelada'])
             ->groupBy('idcliente');
 
@@ -190,7 +190,7 @@ class ClientesController extends Controller
         $ventas = DB::table('ventas')
             ->where('idcliente', $idcliente)
             ->whereNotIn('estado', ['A', 'Anulado', 'Anulada', 'Cancelado', 'Cancelada'])
-            ->sum('totalventa');
+            ->sum('montoventa');
 
         $nc = DB::table('nota_credito_venta')
             ->where('idcliente', $idcliente)

@@ -1,6 +1,8 @@
 @extends ('layouts.admin')
 @section ('contenido')
-	<div class="row">
+@include('compras.partials.create-styles')
+
+	<div class="row tm-create-header">
 		<div class="col-lg-12 col-sm-12 col-md-12 col-xs-12">
 			<h3>Nuevo Pedido</h3>
 			@if (count($errors)>0)
@@ -16,95 +18,106 @@
 	</div>	
 			<form action="{{url('compras/pedido')}}" method="POST" autocomplete="off" enctype="multipart/form-data"> 
         	{{ csrf_field() }}
-    <div class="row">
-    	<div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
-			<div class="form-group">
+    <div class="tm-create-panel">
+    	<div class="row">
+    		<div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
+				<div class="form-group">
+					<label for="idsucursal">Sucursal</label>
+					@if($sucursales)
+						<input type="text" class="form-control" value="{{ $sucursales->descripcion }}" readonly>
+					@else
+						<input type="text" class="form-control" value="No hay sucursal seleccionada" readonly>
+					@endif
+					<input type="hidden" name="idsucursal" value="{{ $sucursales ? $sucursales->idsucursal : '' }}">
+				</div>
+			</div>
+
+	    	<div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
+				<div class="form-group">
 					<label for="usuario">Usuario</label>
 					<input type="text" value="{{ Auth::user()->name }}" class="form-control" placeholder="Usuario..." readonly>
-			</div>
-    	</div> 
-    	<div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
-			<div class="form-group">
-				<label for="idsucursal">Sucursal</label>
-				@if($sucursales)
-					<input type="text" name="idsucursal" class="form-control" value="{{ $sucursales->descripcion }}" readonly>
-				@else
-					<input type="text" name="idsucursal" class="form-control" value="No hay sucursal seleccionada" readonly>
-				@endif
-				<!-- Para el id -->
-					<input type="hidden" name="idsucursal" value="{{ $sucursales->idsucursal }}">
+				</div>
+	    	</div>
 
-			</div>
-		</div>
-    	<div class="col-lg-3 col-sm-3 col-md-3 col-xs-12">
-			<div class="form-group">
+	    	<div class="col-lg-3 col-sm-4 col-md-4 col-xs-12">
+				<div class="form-group">
+					<label for="fecha">Fecha</label>
+					<input type="date" value="{{ date('Y-m-d') }}" class="form-control" readonly>
+				</div>
+	    	</div>
+	    </div>
+
+	    <div class="row">
+	    	<div class="col-lg-9 col-sm-12 col-md-9 col-xs-12">
+				<div class="form-group">
 					<label for="observacion">Observacion</label>
-					<input type="text" name="observacion"  value="{{old('observacion')}}" class="form-control" placeholder="Observacion...">
-			</div>
-    	</div>
+					<input type="text" name="observacion" value="{{old('observacion')}}" class="form-control" placeholder="Observacion...">
+				</div>
+	    	</div>
+	    </div>
     </div>
-    <div class="row">
-    	<div class="panel penel-primary">
-    		<div class="panel-body">
-    			<div class="col-lg-4 col-sm-4 col-md-4 col-xs-12">
+
+    <div class="tm-detail-panel">
+    	<div class="tm-detail-heading">Detalle del Pedido</div>
+    	<div class="tm-detail-body">
+    		<div class="row">
+    			<div class="col-lg-7 col-sm-12 col-md-7 col-xs-12">
     				<div class="form-group">
     					<label>Producto</label>
-    					<select name="pidproducto" class="form-control selectpicker" id="pidproducto" data-Live-search="true">
+    					<select name="pidproducto" class="form-control selectpicker" id="pidproducto" data-live-search="true" data-width="100%" data-size="10" data-container="body" title="Seleccione producto...">
     						@foreach($productos as $producto)
     						<option value="{{$producto->idproducto}}">{{$producto->productos}} {{$producto->marcas}}</option>
     						@endforeach
     					</select>
-    				</div>
+   				</div>
     			</div>
 
-    	<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
-    		<div class="form-group">
-    			<label for="cantidad">Cantidad</label>
-    			<input type="number" name="pcantidad" id="pcantidad" class="form-control" placeholder="Cantidad">
+		    	<div class="col-lg-2 col-sm-6 col-md-2 col-xs-12">
+		    		<div class="form-group">
+		    			<label for="cantidad">Cantidad</label>
+		    			<input type="number" name="pcantidad" id="pcantidad" class="form-control" placeholder="Cantidad">
+		    		</div>
+		    	</div>
+		    	
+		    	<div class="col-lg-2 col-sm-6 col-md-2 col-xs-12">
+		    		<div class="form-group">
+		    			<label>&nbsp;</label>
+		    			<button type="button" id="bt_add" class="btn btn-primary form-control">Agregar</button>
+		    		</div>
+		    	</div>
     		</div>
-    	</div>
-    	
-    	<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
-    		<div class="form-group">
-    			<br>
-    			<button type="button" id="bt_add" class="btn btn-primary">Agregar</button>
-    		</div>
-    	</div>
 
-    	<div class="col-lg-12 col-sm-12 col-md-12 col-xs-12">
-    		<table id="detalles" class="table table-striped table-bordered table-condensed table-hover">
-    			<thead style="background-color:#ffd966">
-    				<th>Opciones</th>
-    				<th>Producto</th>
-    				<th>Cantidad</th>
-    				</thead>
-    			<tfoot>
-    				
-    				<th></th>
-    				<th></th>
-    				<th></th>
-    				
-    			</tfoot>
-    			<tbody>
+	    	<div class="table-responsive">
+	    		<table id="detalles" class="table table-striped table-bordered table-condensed table-hover">
+	    			<thead>
+	    				<th>Opciones</th>
+	    				<th>Producto</th>
+	    				<th>Cantidad</th>
+	    				</thead>
+	    			<tfoot>
+	    				<th></th>
+	    				<th></th>
+	    				<th></th>
+	    			</tfoot>
+	    			<tbody>
 
-    			</tbody>
-    		</table>
-    	</div>
+	    			</tbody>
+	    		</table>
+	    	</div>
 
-    		</div>
     	</div>	
+    </div>
     	
-    	<div class="col-lg-6 col-sm-6 col-md-6 col-xs-12" id="guardar">
+    	<div class="tm-create-panel" id="guardar">
 				<div class="form-group">
 					<input name="_token" value="{{ csrf_token() }}" type="hidden">
-					<button class="btn btn-primary" type="submit">Guardar</button>
+					<button class="btn btn-success" type="submit">Guardar</button>
 					<button class="btn btn-danger" type="reset">Cancelar</button>
-					<button class="btn btn-light" onclick="window.location.href='{{ url('compras/pedido') }}'" type="button">
+					<button class="btn btn-default" onclick="window.location.href='{{ url('compras/pedido') }}'" type="button">
 						<i class="fa fa-arrow-left"></i> Volver
 					</button>
 				</div>
     	</div>			
-	</div>
 			</form>	
 			
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>

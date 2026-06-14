@@ -57,12 +57,12 @@
 				</thead>
 				@forelse ($libroventas as $lv)
 					@php
-						$totalGravada10 += (int) $lv->totalgravada10;
-						$totalGravada5 += (int) $lv->totalgravada5;
-						$totalIVA10 += (int) $lv->totaliva10;
-						$totalIVA5 += (int) $lv->totaliva5;
-						$totalExenta += (int) $lv->totalexenta;
-						$totalventaLv += (int) $lv->totalventa;
+						$totalGravada10 += (int) $lv->montogravada10;
+						$totalGravada5 += (int) $lv->montogravada5;
+						$totalIVA10 += (int) $lv->montoiva10;
+						$totalIVA5 += (int) $lv->montoiva5;
+						$totalExenta += (int) $lv->montoexenta;
+						$totalventaLv += (int) $lv->montoventa;
 					@endphp
 					<tr>
 						<td>Venta</td>
@@ -70,12 +70,12 @@
 						<td>{{ $lv->nro_factura }}</td>
 						<td>{{ $lv->cliente }}</td>
 						<td>{{ $lv->num_documento }}</td>
-						<td align="right">{{ number_format((int) $lv->totalgravada10, 0, ',', '.') }}</td>
-						<td align="right">{{ number_format((int) $lv->totalgravada5, 0, ',', '.') }}</td>
-						<td align="right">{{ number_format((int) $lv->totaliva10, 0, ',', '.') }}</td>
-						<td align="right">{{ number_format((int) $lv->totaliva5, 0, ',', '.') }}</td>
-						<td align="right">{{ number_format((int) $lv->totalexenta, 0, ',', '.') }}</td>
-						<td align="right">{{ number_format((int) $lv->totalventa, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $lv->montogravada10, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $lv->montogravada5, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $lv->montoiva10, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $lv->montoiva5, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $lv->montoexenta, 0, ',', '.') }}</td>
+						<td align="right">{{ number_format((int) $lv->montoventa, 0, ',', '.') }}</td>
 					</tr>
 				@empty
 					@if (count($nota_debitov) <= 0 && count($nota_creditov) <= 0)

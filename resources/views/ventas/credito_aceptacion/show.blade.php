@@ -13,7 +13,7 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="panel panel-primary">
-            <div class="panel-body">
+            <div class="panel-body tm-detail-row">
                 <div class="col-lg-3"><label>Factura</label><p>{{ $venta->nro_factura }}</p></div>
                 <div class="col-lg-3"><label>Cliente</label><p>{{ $venta->cliente }}</p></div>
                 <div class="col-lg-2"><label>Monto</label><p>{{ number_format($aceptacion->monto, 0, ',', '.') }}</p></div>

@@ -147,6 +147,12 @@ class NotaCreditoCController extends Controller
                 throw new Exception('La compra seleccionada no posee cuenta a pagar asociada.');
             }
 
+            $this->validarComprobanteDuplicado(
+                (int) $compra->idproveedor,
+                (string) $request->input('timbrado'),
+                (string) $request->input('nro_factura')
+            );
+
             $idproductos = $request->input('idproducto', []);
             $cantidades = $request->input('cantidad', []);
             $precios = $request->input('precio_compra', []);
@@ -452,6 +458,23 @@ class NotaCreditoCController extends Controller
             ->get();
 
         return compact('nota_creditoc', 'detalles');
+    }
+
+    private function validarComprobanteDuplicado(int $idproveedor, string $timbrado, string $nroFactura): void
+    {
+        $timbrado = trim($timbrado);
+        $nroFactura = trim($nroFactura);
+
+        $existe = DB::table('nota_credito_compra')
+            ->where('idproveedor', '=', $idproveedor)
+            ->where('nro_factura', '=', $nroFactura)
+            ->where('timbrado', '=', $timbrado)
+            ->whereNotIn('estado', ['Cancelado', 'Anulado', 'Anulada', 'A'])
+            ->exists();
+
+        if ($existe) {
+            throw new Exception('Ya existe una nota de credito activa con el mismo proveedor, timbrado y numero de comprobante.');
+        }
     }
 
     private function validarDetalleDevolucion(

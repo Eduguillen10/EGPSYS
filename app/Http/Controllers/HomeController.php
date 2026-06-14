@@ -31,7 +31,7 @@ class HomeController extends Controller
         $ventasHoy = DB::table('ventas')
             ->whereDate('fecha', $hoy)
             ->whereNotIn('estado', ['A', 'Anulado', 'Anulada', 'Cancelado', 'Cancelada'])
-            ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(totalventa), 0) as total')
+            ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(montoventa), 0) as total')
             ->first();
 
         $cobrosHoy = DB::table('cobros as c')
@@ -85,7 +85,7 @@ class HomeController extends Controller
 
         $ultimasVentas = DB::table('ventas as v')
             ->join('clientes as c', 'v.idcliente', '=', 'c.idcliente')
-            ->select('v.idventa', 'v.fecha', 'v.nro_factura', 'v.totalventa', 'v.estado', 'c.nombre as cliente')
+            ->select('v.idventa', 'v.fecha', 'v.nro_factura', 'v.montoventa', 'v.estado', 'c.nombre as cliente')
             ->whereNotIn('v.estado', ['A', 'Anulado', 'Anulada', 'Cancelado', 'Cancelada'])
             ->orderByDesc('v.idventa')
             ->limit(5)

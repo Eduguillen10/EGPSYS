@@ -24,14 +24,13 @@
 		@endif
 	</div>
 </div>
-	<div class="row">
+	<div class="row tm-detail-row">
 		<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
 			<div class="form-group">
 						<label for="idorden">Nro. Venta</label>
 						<p>{{$ventas->idventa}}</p>
 				</div>
-			</div> 
-		</div>	
+			</div>
 		<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
 			<div class="form-group">
 					<label for="sucursal">Sucursal</label>
@@ -109,7 +108,7 @@
 					<p>{{$estado}}</p>
 			</div>
     	</div>
-    	<div class="col-lg-4 col-sm-4 col-md-4 col-xs-12">
+    	<div class="col-lg-12 col-sm-12 col-md-12 col-xs-12 tm-detail-full">
     		<div class="form-group">
 					<label for="obs">Obs</label>
 					<p>{{$ventas->obs}}</p>
@@ -147,17 +146,17 @@
 		    				@foreach($detalles as $det)
 		    				<tr>
 		    					<td>{{$det->producto}}</td>
-		    					<td>{{ number_format($det->cantidad, 0, ',', '.') }}</td>
+		    					<td>{{ \App\Helpers\NumberFormatter::cantidad($det->cantidad) }}</td>
 								<td>{{ number_format($det->precio_venta, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->iva10, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->iva5, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->gravada10, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->gravada5, 0, ',', '.') }}</td>
 								<td>{{ number_format($det->exenta, 0, ',', '.') }}</td>
-								<td>{{ number_format($det->totalitems, 0, ',', '.') }}</td>
+								<td>{{ number_format($det->montoitems, 0, ',', '.') }}</td>
 		    				</tr>
 		    				<?php
-    							$sumcantidad= $sumcantidad + $det->totalitems;
+    							$sumcantidad= $sumcantidad + $det->montoitems;
     						?>
 		    				@endforeach
 			    				<td colspan="8">Total</td>

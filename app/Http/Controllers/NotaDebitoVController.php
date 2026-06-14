@@ -111,12 +111,12 @@ class NotaDebitoVController extends Controller
                 'cli.nombre as cliente',
                 'cli.num_documento',
                 'v.fecha',
-                'v.totaliva10',
-                'v.totaliva5',
-                'v.totalgravada10',
-                'v.totalgravada5',
-                'v.totalexenta',
-                'v.totalventa',
+                'v.montoiva10',
+                'v.montoiva5',
+                'v.montogravada10',
+                'v.montogravada5',
+                'v.montoexenta',
+                'v.montoventa',
                 't.idtimbrado',
                 't.nro_timbrado',
                 'v.condicion',
@@ -221,7 +221,9 @@ class NotaDebitoVController extends Controller
             $totales = $this->guardarDetallesNuevos($nota, $request->get('idproducto'), $request->get('cantidad'), $request->get('precio_venta'));
 
             $nota->fill($totales);
-            $nota->nro_nota_debito = $this->generarNumeroNota($nota->idnota_debitov, $timbradoActivo->nro_serie);
+            $numeroNota = $this->generarNumeroNota($nota->idnota_debitov, $timbradoActivo->nro_serie);
+            $this->validarNumeroDisponible($nota->timbrado, $numeroNota, (int) $nota->idnota_debitov);
+            $nota->nro_nota_debito = $numeroNota;
             $nota->save();
 
             $hashService = app(LegalDocumentHashService::class);
@@ -576,6 +578,19 @@ class NotaDebitoVController extends Controller
         return $serie . '-' . str_pad((string) $idnota, 7, '0', STR_PAD_LEFT);
     }
 
+    private function validarNumeroDisponible(string $timbrado, string $numero, int $idActual): void
+    {
+        $existe = DB::table('nota_debito_venta')
+            ->where('timbrado', $timbrado)
+            ->where('nro_nota_debito', $numero)
+            ->where('idnota_debitov', '<>', $idActual)
+            ->exists();
+
+        if ($existe) {
+            throw new \RuntimeException('Ya existe una nota de debito de venta emitida con este timbrado y numero. No se puede reutilizar.');
+        }
+    }
+
     private function proximoIdTabla(string $tabla, string $pk): int
     {
         return ((int) DB::table($tabla)->max($pk)) + 1;
@@ -776,7 +791,7 @@ class NotaDebitoVController extends Controller
     private function recalcularDeudaVenta(int $idventa): void
     {
         $venta = Ventas::where('idventa', $idventa)->lockForUpdate()->firstOrFail();
-        $importe = $this->importeVentaAjustado($idventa, (int) $venta->totalventa);
+        $importe = $this->importeVentaAjustado($idventa, (int) $venta->montoventa);
         $pagadoReal = (int) DB::table('det_cobro as dc')
             ->join('cobros as c', 'dc.id_cobro', '=', 'c.id_cobro')
             ->leftJoin('nota_credito_venta_cobro as ncc', 'c.id_cobro', '=', 'ncc.id_cobro')

@@ -25,7 +25,7 @@ class VentasDetalle extends Model
         'gravada10',
         'gravada5',
         'exenta',
-        'totalitems',
+        'montoitems',
     ];
 
     // Relación con Venta (muchos detalles pertenecen a una venta)

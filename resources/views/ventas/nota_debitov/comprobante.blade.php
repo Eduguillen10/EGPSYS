@@ -153,7 +153,7 @@
                             @foreach($detalles as $det)
                                 <tr>
                                     <td>{{ $det->producto }}</td>
-                                    <td class="right">{{ number_format($det->cantidad, 0, ',', '.') }}</td>
+                                    <td class="right">{{ \App\Helpers\NumberFormatter::cantidad($det->cantidad) }}</td>
                                     <td class="right">{{ number_format($det->precio_venta, 0, ',', '.') }}</td>
                                     <td class="right">{{ number_format($det->iva10, 0, ',', '.') }}</td>
                                     <td class="right">{{ number_format($det->iva5, 0, ',', '.') }}</td>

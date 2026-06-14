@@ -59,7 +59,7 @@
                     </div>
                     <div class="col-lg-3">
                         <label>Monto</label>
-                        <input class="form-control" value="{{ number_format($venta->totalventa, 0, ',', '.') }}" readonly>
+                        <input class="form-control" value="{{ number_format($venta->montoventa, 0, ',', '.') }}" readonly>
                     </div>
 
                     <div class="col-lg-12" style="margin-top:15px;">

@@ -4,8 +4,8 @@
 	<div class="alert alert-success">{{ session('success') }}</div>
 @endif
 
-<div class="row">
-	<div class="col-lg-2 col-sm-2 col-md-2 col-xs-12">
+<div class="row tm-detail-row">
+	<div class="col-lg-6 col-sm-6 col-md-6 col-xs-12 tm-detail-wide">
 		<div class="form-group">
 			<label>Nro. Ajuste</label>
 			<p>{{ $ajuste->idajuste }}</p>
@@ -53,7 +53,7 @@
 			<p>{{ $ajuste->estado }}</p>
 		</div>
 	</div>
-	<div class="col-lg-6 col-sm-6 col-md-6 col-xs-12">
+	<div class="col-lg-12 col-sm-12 col-md-12 col-xs-12 tm-detail-full">
 		<div class="form-group">
 			<label>Observacion</label>
 			<p>{{ $ajuste->observacion ?: 'Sin observacion' }}</p>
@@ -81,7 +81,7 @@
 								<td>{{ $det->items }}</td>
 								<td>{{ $det->codigo }}</td>
 								<td>{{ $det->producto }}</td>
-								<td>{{ number_format($det->cantidad, 3, ',', '.') }}</td>
+								<td>{{ \App\Helpers\NumberFormatter::cantidad($det->cantidad) }}</td>
 							</tr>
 						@endforeach
 					</tbody>

@@ -66,12 +66,12 @@ class VentasController extends Controller
             'c.nombre as cliente',
             'c.num_documento',
             'v.fecha',
-            'v.totaliva10',
-            'v.totaliva5',
-            'v.totalgravada10',
-            'v.totalgravada5',
-            'v.totalexenta',
-            'v.totalventa',
+            'v.montoiva10',
+            'v.montoiva5',
+            'v.montogravada10',
+            'v.montogravada5',
+            'v.montoexenta',
+            'v.montoventa',
             't.idtimbrado',
             't.nro_timbrado',
             'v.condicion',
@@ -257,12 +257,12 @@ class VentasController extends Controller
                 $venta->fecha         = $request->get('fecha');
                 $venta->estado        = 'Pendiente'; // Pendiente hasta finalizar el cobro
 
-                $venta->totaliva10 = 0;
-                $venta->totaliva5 = 0;
-                $venta->totalgravada10 = 0;
-                $venta->totalgravada5 = 0;
-                $venta->totalexenta = 0;
-                $venta->totalventa = 0;
+                $venta->montoiva10 = 0;
+                $venta->montoiva5 = 0;
+                $venta->montogravada10 = 0;
+                $venta->montogravada5 = 0;
+                $venta->montoexenta = 0;
+                $venta->montoventa = 0;
 
                 $venta->save();
 
@@ -273,7 +273,7 @@ class VentasController extends Controller
                 $sumgravada10 = 0;
                 $sumgravada5 = 0;
                 $sumexenta = 0;
-                $sumtotalitems = 0;
+                $summontoitems = 0;
 
                 for ($cont = 0; $cont < count($idproducto); $cont++) {
 
@@ -283,7 +283,7 @@ class VentasController extends Controller
 
                     $porcentaje = (int)$productos[$pid]->porcentaje;
 
-                    $totalitems = $cant * $pv;
+                    $montoitems = $cant * $pv;
 
                     // Cálculo impuestos
                     $iva10 = 0; $iva5 = 0;
@@ -292,14 +292,14 @@ class VentasController extends Controller
 
                     if ($porcentaje === 10) {
                         $imp = ((100 + $porcentaje) / $porcentaje);
-                        $m_gravada10 = $totalitems;
+                        $m_gravada10 = $montoitems;
 
                         $iva10 = round($m_gravada10 / $imp);
                         $gravada10 = $m_gravada10 - $iva10;
 
                     } elseif ($porcentaje === 5) {
                         $imp = ((100 + $porcentaje) / $porcentaje);
-                        $m_gravada5 = $totalitems;
+                        $m_gravada5 = $montoitems;
 
                         $iva5 = round($m_gravada5 / $imp);
                         $gravada5 = $m_gravada5 - $iva5;
@@ -307,7 +307,7 @@ class VentasController extends Controller
                         $exenta = 0;
 
                     } elseif ($porcentaje === 0) {
-                        $exenta = $totalitems;
+                        $exenta = $montoitems;
 
                     } else {
                         throw new \Exception("Tipo de impuesto no soportado ({$porcentaje}) para producto ID {$pid}.");
@@ -343,7 +343,7 @@ class VentasController extends Controller
                     $detalle->gravada10    = $gravada10;
                     $detalle->gravada5     = $gravada5;
                     $detalle->exenta       = $exenta;
-                    $detalle->totalitems   = $totalitems;
+                    $detalle->montoitems   = $montoitems;
                     $detalle->save();
 
                     app(MovimientoStockService::class)->registrar(
@@ -365,20 +365,20 @@ class VentasController extends Controller
                     $sumgravada10 += $gravada10;
                     $sumgravada5 += $gravada5;
                     $sumexenta += $exenta;
-                    $sumtotalitems += $totalitems;
+                    $summontoitems += $montoitems;
 
                     $items++;
                 }
 
                 // ACTUALIZAR CABECERA CON TOTALES REALES
                 $venta->forceFill([
-                    'totaliva10'     => $sumiva10,
-                    'totaliva5'      => $sumiva5,
-                    'totalgravada10' => $sumgravada10,
-                    'totalgravada5'  => $sumgravada5,
-                    'totalexenta'    => $sumexenta,
-                    'totalventa'     => $sumtotalitems,
-                    'saldo_factura'  => $sumtotalitems,
+                    'montoiva10'     => $sumiva10,
+                    'montoiva5'      => $sumiva5,
+                    'montogravada10' => $sumgravada10,
+                    'montogravada5'  => $sumgravada5,
+                    'montoexenta'    => $sumexenta,
+                    'montoventa'     => $summontoitems,
+                    'saldo_factura'  => $summontoitems,
                 ]);
                 $venta->save();
 
@@ -411,8 +411,8 @@ class VentasController extends Controller
                     'obs'               => $request->get('obs'),
                     'estado'            => 'Generado',
                     'monto_pago'        => 0,
-                    'importe'           => $sumtotalitems,
-                    'saldo'             => $sumtotalitems
+                    'importe'           => $summontoitems,
+                    'saldo'             => $summontoitems
                 ]);
 
                 $cobro = Cobro::create([
@@ -421,7 +421,7 @@ class VentasController extends Controller
                     'idapertura'   => $apertura->idapertura,
                     'fecha_cobro'  => $fechaFactura,
                     'idcliente'    => $request->get('idcliente'),
-                    'monto_cobro'  => $sumtotalitems,
+                    'monto_cobro'  => $summontoitems,
                     'cobro_estado' => 'Pendiente',
                     'idusuario'    => $user->id,
                 ]);
@@ -430,7 +430,7 @@ class VentasController extends Controller
                     'id_cobro'       => $cobro->id_cobro,
                     'items'          => 1,
                     'idventa'        => $venta->idventa,
-                    'monto_detcobro' => $sumtotalitems,
+                    'monto_detcobro' => $summontoitems,
                 ]);
                 return Redirect::to('ventas/venta/' . $venta->idventa);
             });
@@ -459,12 +459,12 @@ class VentasController extends Controller
                 'c.nombre as cliente',
                 'c.num_documento',
                 'v.fecha',
-                'v.totaliva10',
-                'v.totaliva5',
-                'v.totalgravada10',
-                'v.totalgravada5',
-                'v.totalexenta',
-                'v.totalventa',
+                'v.montoiva10',
+                'v.montoiva5',
+                'v.montogravada10',
+                'v.montogravada5',
+                'v.montoexenta',
+                'v.montoventa',
                 't.idtimbrado',
                 't.nro_timbrado',
                 'v.condicion',
@@ -483,7 +483,7 @@ class VentasController extends Controller
 
         $detalles=DB::table('venta_detalle as d')
            ->join('productos as p','d.idproducto','=','p.idproducto')
-           ->select('p.descripcion as producto','d.cantidad','d.precio_venta','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.totalitems')
+           ->select('p.descripcion as producto','d.cantidad','d.precio_venta','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.montoitems')
            ->where('d.idventa','=',$id) 
            ->get();
 
@@ -684,14 +684,14 @@ class VentasController extends Controller
             ->join('sucursal as s', 'c.idsucursal', '=', 's.idsucursal')
             ->join('deposito as dep', 'c.iddeposito', '=', 'dep.iddeposito')
             ->join('proveedor as p', 'c.idproveedor', '=', 'p.idproveedor')        
-            ->select('c.idcompra', 'c.usu_inser', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.nombre as proveedor', 'p.num_documento','c.idordencompra', 'c.fecha_registro', 'c.totaliva10', 'c.totaliva5', 'c.totalgravada10', 'c.totalgravada5', 'c.totalexenta', 'c.totalcompra', 'c.timbrado', 'c.condicion', 'c.concepto' , 'c.nro_factura','c.estado','c.fecha_factura','c.fecha_vencimiento')
+            ->select('c.idcompra', 'c.usu_inser', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'p.idproveedor', 'p.nombre as proveedor', 'p.num_documento','c.idordencompra', 'c.fecha_registro', 'c.montoiva10', 'c.montoiva5', 'c.montogravada10', 'c.montogravada5', 'c.montoexenta', 'c.totalcompra', 'c.timbrado', 'c.condicion', 'c.concepto' , 'c.nro_factura','c.estado','c.fecha_factura','c.fecha_vencimiento')
            ->where('c.idcompra','=',$id)
            ->orderBy('c.idcompra','desc')           
            ->first();
 
         $detalles=DB::table('compra_detalle as d')
            ->join('articulo as a','d.idarticulo','=','a.idarticulo')
-           ->select('idcompra_detalle','a.idarticulo','a.nombre as articulo','d.cantidad','d.precio_compra','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.totalitems')
+           ->select('idcompra_detalle','a.idarticulo','a.nombre as articulo','d.cantidad','d.precio_compra','d.iva10','d.iva5','d.gravada10','d.gravada5','d.exenta','d.montoitems')
            ->where('d.idcompra','=',$id) 
            ->get();
            return view("compras.compra.edit",["compra"=>$compra,"detalles"=>$detalles]);
@@ -708,7 +708,7 @@ class VentasController extends Controller
             ->join('ciudades as ciu', 'c.idciudad', '=', 'ciu.idciudad') // Join con la tabla ciudad
             ->join('timbrado as t', 'v.idtimbrado', '=', 't.idtimbrado')   
             ->join('users as u', 'v.idusuario', '=', 'u.id')
-            ->select('v.idventa', 'u.name as usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'c.idcliente', 'c.nombre as cliente', 'c.num_documento', 'c.direccion', 'c.idciudad', 'ciu.descripcion as ciudad', 'c.telefono' , 'v.fecha', 'v.totaliva10', 'v.totaliva5', 'v.totalgravada10', 'v.totalgravada5', 'v.totalexenta', 'v.totalventa', 't.idtimbrado', 't.nro_timbrado', 't.fecha_inicial', 't.fecha_vencimiento' ,'v.condicion', 'v.obs' , 'v.nro_factura','v.estado','v.cta_cte_cliente', 'v.hash_documento', 'v.hash_anulacion', 'v.hash_version')
+            ->select('v.idventa', 'u.name as usuario', 's.idsucursal', 's.descripcion as sucursal', 'dep.iddeposito', 'dep.descripcion as deposito', 'c.idcliente', 'c.nombre as cliente', 'c.num_documento', 'c.direccion', 'c.idciudad', 'ciu.descripcion as ciudad', 'c.telefono' , 'v.fecha', 'v.montoiva10', 'v.montoiva5', 'v.montogravada10', 'v.montogravada5', 'v.montoexenta', 'v.montoventa', 't.idtimbrado', 't.nro_timbrado', 't.fecha_inicial', 't.fecha_vencimiento' ,'v.condicion', 'v.obs' , 'v.nro_factura','v.estado','v.cta_cte_cliente', 'v.hash_documento', 'v.hash_anulacion', 'v.hash_version')
             ->where('v.idventa', $idventa)
             ->orderBy('v.idventa','asc')
             ->first();
@@ -716,7 +716,7 @@ class VentasController extends Controller
         $venta_detalle = DB::table('venta_detalle as d')
             ->join('productos as p', 'd.idproducto', '=', 'p.idproducto')
             ->join('ventas as v', 'd.idventa', '=', 'v.idventa')
-            ->select('d.idventa', 'd.items' ,'p.descripcion as producto', 'd.cantidad', 'd.precio_venta', 'd.iva10', 'd.iva5', 'd.gravada10', 'd.gravada5', 'd.exenta', 'd.totalitems')
+            ->select('d.idventa', 'd.items' ,'p.descripcion as producto', 'd.cantidad', 'd.precio_venta', 'd.iva10', 'd.iva5', 'd.gravada10', 'd.gravada5', 'd.exenta', 'd.montoitems')
             ->where('d.idventa', $idventa)
             ->orderBy('d.idventa', 'asc')
             ->get();

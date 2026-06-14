@@ -13,57 +13,66 @@
 <style>
     .inicio-page {
         color: #1f2933;
+        padding: 16px 14px 24px;
     }
 
     .inicio-header {
-        align-items: flex-end;
-        border-bottom: 1px solid #e5e7eb;
+        align-items: center;
+        background: #fff;
+        border: 1px solid #d9e2ec;
+        border-left: 4px solid #3f8fc9;
+        border-radius: 6px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .06);
         display: flex;
         justify-content: space-between;
-        margin-bottom: 16px;
-        padding-bottom: 12px;
+        margin-bottom: 14px;
+        padding: 14px 16px;
     }
 
     .inicio-title {
-        font-size: 24px;
-        font-weight: 700;
-        margin: 0;
+        color: #1f2933;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: 0;
+        line-height: 1.15;
+        margin: 0 0 4px;
+        text-transform: none;
     }
 
     .inicio-date {
         color: #6b7280;
         font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
+        font-weight: 700;
     }
 
     .inicio-grid {
         display: grid;
-        gap: 12px;
+        gap: 14px;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        margin-bottom: 12px;
+        margin-bottom: 14px;
     }
 
     .metric-card {
         background: #fff;
-        border: 1px solid #e5e7eb;
+        border: 1px solid #d9e2ec;
         border-radius: 6px;
-        min-height: 118px;
-        padding: 14px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .06);
+        min-height: 104px;
+        padding: 14px 16px;
     }
 
     .metric-top {
         align-items: center;
         display: flex;
         justify-content: space-between;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
     }
 
     .metric-label {
-        color: #6b7280;
+        color: #52606d;
         font-size: 11px;
         font-weight: 700;
-        letter-spacing: .5px;
+        letter-spacing: 0;
         text-transform: uppercase;
     }
 
@@ -98,10 +107,10 @@
 
     .metric-value {
         color: #111827;
-        font-size: 24px;
+        font-size: 23px;
         font-weight: 800;
         line-height: 1.1;
-        margin-bottom: 6px;
+        margin-bottom: 5px;
     }
 
     .metric-note {
@@ -113,12 +122,13 @@
     .inicio-band {
         align-items: center;
         background: #fff;
-        border: 1px solid #e5e7eb;
+        border: 1px solid #d9e2ec;
         border-radius: 6px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .05);
         display: flex;
         gap: 12px;
         justify-content: space-between;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
         padding: 12px 14px;
     }
 
@@ -157,21 +167,24 @@
     }
 
     .content-grid {
+        align-items: start;
         display: grid;
-        gap: 12px;
+        gap: 14px;
         grid-template-columns: 1.35fr 1fr;
     }
 
     .inicio-panel {
         background: #fff;
-        border: 1px solid #e5e7eb;
+        border: 1px solid #d9e2ec;
         border-radius: 6px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .06);
         overflow: hidden;
     }
 
     .panel-head {
         align-items: center;
-        border-bottom: 1px solid #e5e7eb;
+        background: #fff;
+        border-bottom: 1px solid #d9e2ec;
         display: flex;
         justify-content: space-between;
         padding: 12px 14px;
@@ -185,9 +198,15 @@
     }
 
     .panel-link {
-        color: #2563eb;
+        color: #3f8fc9;
         font-size: 12px;
         font-weight: 700;
+    }
+
+    .panel-link:hover,
+    .panel-link:focus {
+        color: #347fab;
+        text-decoration: none;
     }
 
     .inicio-table {
@@ -195,12 +214,12 @@
     }
 
     .inicio-table thead th {
-        background: #f9fafb;
-        border-bottom: 1px solid #e5e7eb !important;
-        color: #6b7280;
+        background: #f6f8fb !important;
+        border-bottom: 1px solid #d9e2ec !important;
+        color: #52606d !important;
         font-size: 11px;
         font-weight: 800;
-        letter-spacing: .4px;
+        letter-spacing: 0;
         text-transform: uppercase;
     }
 
@@ -221,7 +240,7 @@
 
     .empty-row {
         color: #6b7280;
-        padding: 16px;
+        padding: 18px 16px;
         text-align: center;
     }
 
@@ -382,7 +401,7 @@
                                 <td>{{ $venta->nro_factura }}</td>
                                 <td>{{ $venta->cliente }}</td>
                                 <td>{{ $venta->fecha ? date('d/m/Y', strtotime($venta->fecha)) : '-' }}</td>
-                                <td class="amount">{{ number_format($venta->totalventa, 0, ',', '.') }}</td>
+                                <td class="amount">{{ number_format($venta->montoventa, 0, ',', '.') }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -429,7 +448,7 @@
                                 <strong>{{ $stock->descripcion }}</strong>
                                 <span>Codigo: {{ $stock->codigo ?? '-' }}</span>
                             </div>
-                            <div class="alert-value stock">{{ number_format($stock->cantidad, 0, ',', '.') }}</div>
+                            <div class="alert-value stock">{{ \App\Helpers\NumberFormatter::cantidad($stock->cantidad) }}</div>
                         </li>
                     @empty
                         <li>

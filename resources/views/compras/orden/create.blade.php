@@ -29,6 +29,8 @@
     }
 </style>
 
+@include('compras.partials.create-styles')
+
 <div class="row orden-header">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
         <h3>Nueva Orden de Compra</h3>
